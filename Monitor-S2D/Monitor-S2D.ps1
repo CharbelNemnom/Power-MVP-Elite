@@ -14,7 +14,7 @@
 	Last modified: 08.12.2017
 	Requires     : PowerShell Version 5.1 or above
 	OS           : Windows Server 2016
-    Role         : Storage Spaces Direct
+        Role         : Storage Spaces Direct
 	PSModule     : Storage
 	===========================================================================
 
