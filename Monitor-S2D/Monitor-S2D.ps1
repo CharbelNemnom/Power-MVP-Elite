@@ -5,27 +5,27 @@
 	.DESCRIPTION
 	Storage Spaces Direct Monitoring tool including email Alerts.
 
-	.NOTES
-	===========================================================================
-	Tool Name    : Monitor-S2D.ps1
-	Author       : Charbel Nemnom
-	Version      : 1.1
-	Date created : 07.12.2017
-	Last modified: 08.12.2017
-	Requires     : PowerShell Version 5.1 or above
-	OS           : Windows Server 2016
-        Role         : Storage Spaces Direct
-	PSModule     : Storage
-	===========================================================================
+.NOTES
+===========================================================================
+Tool Name    : Monitor-S2D.ps1
+Author       : Charbel Nemnom
+Version      : 1.1
+Date created : 07.12.2017
+Last modified: 08.12.2017
+Requires     : PowerShell Version 5.1 or above
+OS           : Windows Server 2016
+Role         : Storage Spaces Direct
+PSModule     : Storage
+===========================================================================
 
-	.LINK
-	To provide feedback or for further assistance please visit:
-	https://charbelnemnom.com
+.LINK
+To provide feedback or for further assistance please visit:
+https://charbelnemnom.com
 
-	.EXAMPLE
-	.\Monitor-S2D.ps1 -ClusterName <ClusterName> -Credential <DomainName\UserName>
-	This example will check the Storage Spaces Direct (S2D) Cluster Health,
-    If the cluster reports any minor or critical issues, you will receive immediate alert via email.    
+.EXAMPLE
+.\Monitor-S2D.ps1 -ClusterName <ClusterName> -Credential <DomainName\UserName>
+This example will check the Storage Spaces Direct (S2D) Cluster Health,
+ If the cluster reports any minor or critical issues, you will receive immediate alert via email.    
     
 #>
 
