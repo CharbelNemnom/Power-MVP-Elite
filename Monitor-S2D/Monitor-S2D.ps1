@@ -11,9 +11,9 @@ Tool Name    : Monitor-S2D.ps1
 Author       : Charbel Nemnom
 Version      : 1.1
 Date created : 07.12.2017
-Last modified: 08.12.2017
+Last modified: 14.12.2017
 Requires     : PowerShell Version 5.1 or above
-OS           : Windows Server 2016
+OS           : Windows Server 2016 Version 1607
 Role         : Storage Spaces Direct
 PSModule     : Storage
 ===========================================================================
@@ -35,7 +35,7 @@ param(
     [Parameter(Mandatory=$True, HelpMessage='Specify the name of the S2D cluster')]
     [Alias('S2DCluster')]
     [string]$ClusterName,
-    [Parameter(Mandatory=$True, HelpMessage='Specify Credentials')]
+    [Parameter(HelpMessage='Specify Credentials')]
     [Alias('Cred')]
     [PSCredential]$Credential
      )
@@ -88,7 +88,9 @@ $report += "Body{font-family:Calibri;}"
 $report += "</style>"
 $report += "<center><p style=""font-size:12px;color:#BDBDBD"">Monitor-S2D - Version: 1.1 | Created By: Charbel Nemnom [MVP] | Feedback: https://charbelnemnom.com</p></center>"
 
+# Check if Storage Spaces Direct is in Minor Severity State
 $DebugMinor    = Get-StorageSubSystem *Cluster* -CimSession $Session | Debug-StorageSubSystem -CimSession $Session | ?{$_.PerceivedSeverity -eq "Minor"}      
+# Check if Storage Spaces Direct is in Critical Severity State
 $DebugCritical = Get-StorageSubSystem *Cluster* -CimSession $Session | Debug-StorageSubSystem -CimSession $Session | ?{$_.PerceivedSeverity -eq "Critical"}
 
 If ($DebugMinor.PerceivedSeverity -match "Minor") {
@@ -96,7 +98,6 @@ If ($DebugMinor.PerceivedSeverity -match "Minor") {
    $email.Subject = "Cluster: $ClusterName is in Minor Severity State! $($filedate)"
    $report +=  "<style>TH{background-color:Indigo}TR{background-color:$($warningColor)}</style>"
    # Get S2D Minor State details
-   # $report +=  "<B>Storage Spaces Direct Name: $ClusterName is in Minor Severity State!</B> <br> <br>"
    Foreach ($Minor in $DebugMinor) {
    $FaultingObjectType = ($Minor.FaultingObjectType) -replace "\."," "
    $FaultType = ($Minor.FaultType) -replace "\."," "
@@ -115,14 +116,12 @@ If ($DebugMinor.PerceivedSeverity -match "Minor") {
 Else {
 Write-Verbose "No Minor issues found"
 }
-    
 
 If ($DebugCritical.PerceivedSeverity -match "Critical") {
    Write-Verbose "Critical S2D issues found"
    $email.Subject = "Cluster: $ClusterName is in Critical Severity State! $($filedate)"
    $report +=  "<style>TH{background-color:Indigo}TR{background-color:$($errorColor)}</style>"
    # Get S2D Critical State details
-   # $report +=  "<B>Storage Spaces Direct Name: $ClusterName is in Critical Severity State!</B> <br> <br>"
    Foreach ($Critical in $DebugCritical) {
    $FaultingObjectType = ($Critical.FaultingObjectType) -replace "\."," "
    $FaultType = ($Critical.FaultType) -replace "\."," "
@@ -142,7 +141,6 @@ Else {
 Write-Verbose "No Critical issues found"
 }
   
-
 If ($DebugMinor -and $DebugCritical) {
      $email.Subject = "Cluster: $ClusterName is in Critical and Minor Severity State! $($filedate)"
      Write-Verbose "Finalizing Report"
