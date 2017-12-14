@@ -1,9 +1,9 @@
 ﻿<#
- 	.SYNOPSIS
-	S2D Monitoring tool.
+.SYNOPSIS
+S2D Monitoring tool.
 
-	.DESCRIPTION
-	Storage Spaces Direct Monitoring tool including email Alerts.
+.DESCRIPTION
+Storage Spaces Direct Monitoring tool including email Alerts.
 
 .NOTES
 ===========================================================================
@@ -25,7 +25,7 @@ https://charbelnemnom.com
 .EXAMPLE
 .\Monitor-S2D.ps1 -ClusterName <ClusterName> -Credential <DomainName\UserName>
 This example will check the Storage Spaces Direct (S2D) Cluster Health,
- If the cluster reports any minor or critical issues, you will receive immediate alert via email.    
+If the cluster reports any minor or critical issues, you will receive immediate alert via email.    
     
 #>
 
