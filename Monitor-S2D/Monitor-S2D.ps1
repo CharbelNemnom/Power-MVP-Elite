@@ -11,7 +11,7 @@ Tool Name    : Monitor-S2D.ps1
 Author       : Charbel Nemnom
 Version      : 1.1
 Date created : 07.12.2017
-Last modified: 14.12.2017
+Last modified: 15.12.2017
 Requires     : PowerShell Version 5.1 or above
 OS           : Windows Server 2016 Version 1607
 Role         : Storage Spaces Direct
@@ -28,7 +28,8 @@ This example will check the Storage Spaces Direct (S2D) Cluster Health,
 If the cluster reports any minor or critical issues, you will receive immediate alert via email.    
 
 .EXAMPLE
-
+You can create a recurring task that will run every X minutes, and monitor your S2D Cluster.
+Refer to 
 #>
 
 ##### Parameters #####
