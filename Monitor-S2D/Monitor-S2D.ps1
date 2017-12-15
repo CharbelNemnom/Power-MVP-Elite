@@ -26,7 +26,9 @@ https://charbelnemnom.com
 .\Monitor-S2D.ps1 -ClusterName <ClusterName> -Credential <DomainName\UserName>
 This example will check the Storage Spaces Direct (S2D) Cluster Health,
 If the cluster reports any minor or critical issues, you will receive immediate alert via email.    
-    
+
+.EXAMPLE
+
 #>
 
 ##### Parameters #####
@@ -52,9 +54,9 @@ Catch {
 # Variables
 $Filedate = Get-date
 $report = $null
-$FromEmail = "isckc@iscadkc.ae"
-$ToEmail1 = "cnemnom@sabis.net"
-$ToEmail2 = "cnemnom@sabis.net"
+$FromEmail = "fromemail@domain.com"
+$ToEmail1 = "email1@domain.com"
+$ToEmail2 = "email2@domain.com"
 $email = new-object Net.Mail.MailMessage
 $email.From = new-object Net.Mail.MailAddress($FromEmail)
 $email.Priority = [System.Net.Mail.MailPriority]::High
@@ -62,13 +64,12 @@ $email.IsBodyHtml = $true
 $email.Body = $report
 $email.To.Add($ToEmail1)
 $email.To.Add($ToEmail2)
-$tableColor = "WhiteSmoke"
 $errorColor = "Red"
 $warningColor = "Yellow"
 
 # Establish Connection to SMTP server
-$smtpServer = "mailv.emirates.net.ae"
-$smtpCreds = new-object Net.NetworkCredential("isckc@iscadkc.ae", "isckc186")
+$smtpServer = "smtp.office365.com"
+$smtpCreds = new-object Net.NetworkCredential("Username", "Password")
 $smtp = new-object Net.Mail.SmtpClient($smtpServer)
 $smtp.UseDefaultCredentials = $false
 $smtp.Credentials = $smtpCreds
