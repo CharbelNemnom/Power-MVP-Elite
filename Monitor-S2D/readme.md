@@ -37,3 +37,7 @@ Here is another alert for Critical and Minor issue. One server is down and the n
 
 Here is another alert for Minor issue. The network cable is disconnected:
 ![s2d-monitor-powershell-v1607-09](https://user-images.githubusercontent.com/13448198/34036440-a2613ec2-e19e-11e7-9864-673ea1def3c0.jpg)
+
+This is still version 1.1. If you have any feedback or changes that everyone should receive, please feel free to update the source and create a pull request.
+
+Thank You!
