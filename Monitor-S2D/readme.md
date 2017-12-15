@@ -26,3 +26,9 @@ Finally, save Monitor-S2D.ps1 script in a desired path, and then run the script 
 
 ---- Not Working environment ----
 - Windows Server 2012R2 or older release
+
+![s2d-monitor-powershell-v1607-07](https://user-images.githubusercontent.com/13448198/34036424-8f12cc50-e19e-11e7-94cc-408f88c27951.jpg)
+
+![s2d-monitor-powershell-v1607-08](https://user-images.githubusercontent.com/13448198/34036439-9fa8402c-e19e-11e7-8c33-cd135b006bf5.jpg)
+
+![s2d-monitor-powershell-v1607-09](https://user-images.githubusercontent.com/13448198/34036440-a2613ec2-e19e-11e7-9864-673ea1def3c0.jpg)
