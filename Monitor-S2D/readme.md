@@ -6,13 +6,14 @@ This script works on disaggregated and Hyper-Converged S2D infrastructure. This 
 To run Monitor-S2D.ps1 script once, run the following commands:
 
 $Credential = Get-Credential
+
 .\Monitor-S2D.ps1 -ClusterName "S2DCluster" -Credential $Credential
 
 To run the script as recurring task, update the following paramters in Monitor-S2D.ps1 script:
 
 $ClusterName = "S2D-ClusterName"
 
-Finally, save the script in a desired path, and then run the script named "Create-S2DRecurringTask.ps1" in this repository. 
+Finally, save Monitor-S2D.ps1 script in a desired path, and then run the script named "Create-S2DRecurringTask.ps1" in this repository to create a recurring S2D PowerShell task. 
 
 ---- Tested environment -----
 - Windows Server Version 1607
