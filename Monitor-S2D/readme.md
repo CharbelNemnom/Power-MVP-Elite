@@ -9,7 +9,7 @@ $Credential = Get-Credential
 
 .\Monitor-S2D.ps1 -ClusterName "S2DCluster" -Credential $Credential
 
-To run the script as recurring task, update the following paramters in Monitor-S2D.ps1 script:
+To run the script as recurring task, update the following paramter in Monitor-S2D.ps1 script:
 
 $ClusterName = "S2D-ClusterName"
 
