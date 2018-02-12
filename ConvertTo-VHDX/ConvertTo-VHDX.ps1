@@ -28,8 +28,7 @@ https://charbelnemnom.com
 .EXAMPLE
 ./ConvertTo-VHDX -Source <SourcePath> -Destination <DestinationPath> -DirectoryName <DirectoryName>
 This example converts all VHD in a source path to VHDX in a destination path, and finally set the PhysicalSectorSizeBytes to 4096.
-A converted VHDX file has a physical sector size of 512 Bytes. 
-However, when you create a new VHDX file it has a physical sector size of 4K. 
+A converted VHDX file has a physical sector size of 512 Bytes. However, when you create a new VHDX file it has a physical sector size of 4K. 
 #>
 
 [CmdletBinding()]
@@ -43,7 +42,7 @@ param (
 )
 
 If (-not(Test-Path -Path "$SourcePath\*" -Filter *.VHD)){
-    Write-Warning -Message "Source Path does not contain VHD format, Please specify a correct source path"
+    Write-Warning -Message "Source Path does not contain a valid VHD format, Please specify a correct source path"
     Exit
 }
 
@@ -52,10 +51,10 @@ If (!(Test-Path -Path "$DestinationPath")){
     Exit
 }
 
-# Convert-VHD
+# Convert-VHD to VHDX
 Get-ChildItem -Path "$SourcePath" -Recurse -Filter *.VHD | `
 ForEach-Object {Convert-VHD -Path $_.FullName -Destination ("$DestinationPath" + ".vhdx")}
 
-# Set-VHD to 4K
+# Set-VHDX to 4K
 Get-ChildItem -Path "$DestinationPath" -Recurse -Filter *.VHDX | `
 ForEach-Object {Set-VHD -Path $_.FullName -PhysicalSectorSizeBytes 4096}
