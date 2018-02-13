@@ -36,6 +36,7 @@ param (
     [Parameter(Position=0, Mandatory=$true, HelpMessage = 'Source Path')]
     [Alias('Source')]
     [String]$SourcePath,
+
     [Parameter(Position=1, Mandatory=$true, HelpMessage = 'Destination Path')]
     [Alias('Destination')]
     [String]$DestinationPath
@@ -48,7 +49,7 @@ If (-not(Test-Path -Path "$SourcePath\*" -Filter *.VHD)){
 }
 
 Write-Verbose -Message "Checking the destination path..."
-If (!(Test-Path -Path "$DestinationPath")){
+If (-not(Test-Path -Path "$DestinationPath")){
     Write-Warning -Message "Destination Path does not exist, Please specify a correct destination path!"
     Exit
 }
