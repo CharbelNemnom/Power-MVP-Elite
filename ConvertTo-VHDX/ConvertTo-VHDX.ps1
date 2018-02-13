@@ -57,8 +57,8 @@ If (-not(Test-Path -Path "$DestinationPath")){
 Write-Verbose -Message "Conversion starts..."
 # Convert-VHD to VHDX
 Get-ChildItem -Path "$SourcePath" -Recurse -Filter *.VHD | `
-ForEach-Object {Convert-VHD -Path $_.FullName -Destination ("$DestinationPath" + "$_.vhdx")} | `
-ForEach-Object {Set-VHD -Path $_.FullName -PhysicalSectorSizeBytes 4096}
+ForEach-Object { Convert-VHD -Path $_.FullName -Destination ("$DestinationPath" + $_.BaseName + ".vhdx") } | `
+ForEach-Object { Set-VHD -Path $_.FullName -PhysicalSectorSizeBytes 4096 }
 
 [ValidateSet('Yes','No')]$Answer = Read-Host "`nDo you want to delete the source VHD files? Enter Yes/No"
 If ($Answer -eq 'Yes') {
