@@ -25,3 +25,7 @@ Here is a screenshot showing the conversion is completed.
 ---- Tested environment -----
 - Windows Server 2012 R2
 - EN-US language OS
+
+If you have any feedback or changes that everyone should receive, please feel free to update the source and create a pull request.
+
+Thank You!
