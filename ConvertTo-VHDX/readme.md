@@ -14,6 +14,10 @@ Here is a screenshot showing the conversion is completed.
 
 ![posh-convert-vhd-to-vhdx-04](https://user-images.githubusercontent.com/13448198/36154255-431d3300-10ea-11e8-9fb2-c42613265d85.png)
 
+You have converted multiple VHD files to the latest virtual machine storage, the VHDX format virtual hard disk.
+
+
+
 ---- Tested environment -----
 - Windows Server Hyper-V Version 1709
 - EN-US language OS
