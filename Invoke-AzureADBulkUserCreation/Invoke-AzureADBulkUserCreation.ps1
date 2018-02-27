@@ -47,7 +47,7 @@ Try {
 }
 
 Foreach($Entry in $CSVData) {
-    #Verify that mandatory properties are defined for each object
+    # Verify that mandatory properties are defined for each object
     
     $DisplayName = $Entry.DisplayName
     $MailNickName = $Entry.MailNickName
