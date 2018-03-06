@@ -14,9 +14,9 @@ Azure AD Bulk User Creation.
 .NOTES
 File Name : Invoke-AzureADBulkUserCreation.ps1
 Author    : Charbel Nemnom
-Version   : 1.0
+Version   : 1.1
 Date      : 27-February-2018
-Update    : 28-February-2018
+Update    : 06-March-2018
 Requires  : PowerShell Version 5.0 or above
 Module    : AzureADPreview Version 2.0.0.154 or above
 Product   : Azure Active Directory
@@ -26,25 +26,22 @@ To provide feedback or for further assistance please visit:
 https://charbelnemnom.com
 
 .EXAMPLE
-./Invoke-AzureADBulkUserCreation -FilePath <FilePath> -Verbose
-This example will import all users from a CSV File and then create Azure AD account.
+./Invoke-AzureADBulkUserCreation -FilePath <FilePath> -Credential <Username\Password> -Verbose
+This example will import all users from a CSV File and then create the corresponding account in Azure Active Directory.
 #>
 
 [CmdletBinding()]
 Param(
-	[Parameter(Position=0)]
-	[ValidateScript({Test-Path $_})]
-	[string[]]$FilePath = "F:\BulkAzureADUserCreation.csv"
+    [Parameter(Position=0, Mandatory=$True, HelpMessage='Specify the path of the CSV file')]
+    [Alias('CSVFile')]
+    [string]$FilePath,
+    [Parameter(Position=1, Mandatory=$True, HelpMessage='Specify Credentials')]
+    [Alias('Cred')]
+    [PSCredential]$Credential
 )
 
-Function AzureAD {
-    Install-Module -Name AzureADPreview -Verbose
-    Write-Verbose "Installing AzureADPreview PowerShell Module..."    
-}
-
-Try {
-    Import-Module -Name AzureADPreview -Verbose
-    Write-Verbose "Importing AzureADPreview MOdule..."
+Function Install-AzureAD {
+    Install-Module -Name AzureADPreview -Force        
 }
 
 Try {
@@ -53,9 +50,21 @@ Try {
     Write-Verbose "Total no. of entries in CSV are : $($CSVData.count)"
     } 
 Catch {
-    Write-Verbose "Failed to read from the CSV file $FilePath. Script exiting"
+    Write-Verbose "Failed to read from the CSV file $FilePath Exiting!"
     Break
     }
+
+Try {
+    Import-Module -Name AzureADPreview -ErroAction Stop | Out-Null
+    }
+Catch {
+    Write-Verbose "Azure AD PowerShell Module not found..."
+    Write-Verbose "Installing Azure AD PowerShell Module..."
+    Install-AzureAD
+    }
+
+Write-Verbose "Connecting to Azure AD..."
+Connect-AzureAD -Credential $Credential 
 
 Foreach($Entry in $CSVData) {
     # Verify that mandatory properties are defined for each object
@@ -64,25 +73,21 @@ Foreach($Entry in $CSVData) {
     $UserPrincipalName = $Entry.UserPrincipalName
     $Password = $Entry.PasswordProfile
     
-Write-Verbose "Verify if DisplayName is defined..." 
 If(!$DisplayName) {
     Write-Warning "$DisplayName is not provided. Continue to the next record"
     Continue
 }
 
-Write-Verbose "Verify if MailNickName is defined..." 
 If(!$MailNickName) {
      Write-Warning "$MailNickName is not provided. Continue to the next record"
     Continue
 }
 
-Write-Verbose "Verify if UserPrincipalName is defined..."    
 If(!$UserPrincipalName) {
     Write-Warning "$UserPrincipalName is not provided. Continue to the next record"
     Continue
     }
 
-Write-Verbose "Verify if Password is defined..."    
 If(!$Password) {
     Write-Warning "$PasswordProfile is not provided. Setting it to Random password"
     $Password = "Randompwd1$"
@@ -103,9 +108,9 @@ Try {
                         -Country $Entry.Country `
                         -Department $Entry.Department `
                         -JobTitle $Entry.JobTitle `
-                        -Mobile $Entry.Mobile
+                        -Mobile $Entry.Mobile | Out-Null
                         
-        Write-Verbose "$DisplayName : Azure AD User Account created successfully"    
+        Write-Verbose "$DisplayName : User Account is created successfully"    
                     
     
     } Catch {
