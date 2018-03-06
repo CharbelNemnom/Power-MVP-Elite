@@ -14,7 +14,7 @@ Azure AD Bulk User Creation.
 .NOTES
 File Name : Invoke-AzureADBulkUserCreation.ps1
 Author    : Charbel Nemnom
-Version   : 1.1
+Version   : 1.2
 Date      : 27-February-2018
 Update    : 06-March-2018
 Requires  : PowerShell Version 5.0 or above
@@ -40,7 +40,8 @@ Param(
     [PSCredential]$Credential
 )
 Function Install-AzureAD {
-    Install-Module -Name AzureADPreview -Force -Verbose:$false    
+    Set-PSRepository -Name PSGallery -Installation Trusted
+    Install-Module -Name AzureADPreview -AllowClobber -Verbose:$false    
 }
 
 Try {
@@ -114,7 +115,7 @@ Try {
                     -JobTitle $Entry.JobTitle `
                     -Mobile $Entry.Mobile | Out-Null
                         
-    Write-Verbose "$DisplayName : AAD Account is created successfully"   
+    Write-Verbose "$DisplayName : AAD Account is created successfully!"   
     } 
 Catch {
     Write-Warning "$DisplayName : Error occurred while creating Azure AD Account. $_"
