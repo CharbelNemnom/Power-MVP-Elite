@@ -39,9 +39,8 @@ Param(
     [Alias('Cred')]
     [PSCredential]$Credential
 )
-
 Function Install-AzureAD {
-    Install-Module -Name AzureADPreview -Force        
+    Install-Module -Name AzureADPreview -Force -Verbose:$false    
 }
 
 Try {
@@ -55,7 +54,7 @@ Catch {
     }
 
 Try {
-    Import-Module -Name AzureADPreview -ErroAction Stop | Out-Null
+    Import-Module -Name AzureADPreview -ErrorAction Stop -Verbose:$false | Out-Null
     }
 Catch {
     Write-Verbose "Azure AD PowerShell Module not found..."
@@ -89,31 +88,29 @@ If(!$UserPrincipalName) {
     }
 
 If(!$Password) {
-    Write-Warning "$PasswordProfile is not provided. Setting it to Random password"
+    Write-Warning "Password is not provided. Setting it to random password"
     $Password = "Randompwd1$"
     }
 Else {
     $PasswordProfile = New-Object -TypeName Microsoft.Open.AzureAD.Model.PasswordProfile
     $PasswordProfile.Password = $Password
-    }
-   
+    }   
     
 Try {    
     New-AzureADUser -DisplayName $DisplayName `
-                        -AccountEnabled $true `
-                        -MailNickName $MailNickName `
-                        -UserPrincipalName $UserPrincipalName `
-                        -PasswordProfile $PasswordProfile `
-                        -City $Entry.City `
-                        -Country $Entry.Country `
-                        -Department $Entry.Department `
-                        -JobTitle $Entry.JobTitle `
-                        -Mobile $Entry.Mobile | Out-Null
+                    -AccountEnabled $true `
+                    -MailNickName $MailNickName `
+                    -UserPrincipalName $UserPrincipalName `
+                    -PasswordProfile $PasswordProfile `
+                    -City $Entry.City `
+                    -Country $Entry.Country `
+                    -Department $Entry.Department `
+                    -JobTitle $Entry.JobTitle `
+                    -Mobile $Entry.Mobile | Out-Null
                         
-        Write-Verbose "$DisplayName : User Account is created successfully"    
-                    
-    
-    } Catch {
-        Write-Warning "$DisplayName : Error occurred while creating Azure AD Account. $_"
-        }
+    Write-Verbose "$DisplayName : User Account is created successfully"   
+    } 
+Catch {
+    Write-Warning "$DisplayName : Error occurred while creating Azure AD Account. $_"
+    }
 }
