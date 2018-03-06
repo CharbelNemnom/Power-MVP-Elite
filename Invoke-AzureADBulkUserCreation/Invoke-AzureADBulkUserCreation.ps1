@@ -62,8 +62,14 @@ Catch {
     Install-AzureAD
     }
 
-Write-Verbose "Connecting to Azure AD..."
-Connect-AzureAD -Credential $Credential 
+Try {
+    Write-Verbose "Connecting to Azure AD..."
+    Connect-AzureAD -Credential $Credential -ErrorAction Stop | Out-Null
+}
+Catch {
+    Write-Verbose "Cannot connect to Azure AD. Please check your credentials. Exiting!"
+    Break
+}
 
 Foreach($Entry in $CSVData) {
     # Verify that mandatory properties are defined for each object
@@ -108,7 +114,7 @@ Try {
                     -JobTitle $Entry.JobTitle `
                     -Mobile $Entry.Mobile | Out-Null
                         
-    Write-Verbose "$DisplayName : User Account is created successfully"   
+    Write-Verbose "$DisplayName : AAD Account is created successfully"   
     } 
 Catch {
     Write-Warning "$DisplayName : Error occurred while creating Azure AD Account. $_"

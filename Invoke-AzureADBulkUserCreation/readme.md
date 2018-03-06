@@ -9,4 +9,16 @@ Run the script as follows:
 
 This example will import all users from a CSV File and then create the corresponding account in Azure Active Directory.
 
-Here is a screenshot showing the creation is completed.
+Here are a couple of screenshots showing how to use this tool.
+
+---- Tested environment -----
+- Windows Server 2016, Version 1607 / 1709
+- EN-US language OS
+
+---- Tested environment -----
+- Windows 10, Version 1607 / 1703 / 1709
+- EN-US language OS
+
+If you have any feedback or changes that everyone should receive, please feel free to update the source and create a pull request.
+
+Thank You!
