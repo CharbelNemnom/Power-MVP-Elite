@@ -14,11 +14,11 @@ Azure AD Bulk User Creation.
 .NOTES
 File Name : Invoke-AzureADBulkUserCreation.ps1
 Author    : Charbel Nemnom
-Version   : 1.2
+Version   : 1.3
 Date      : 27-February-2018
-Update    : 06-March-2018
-Requires  : PowerShell Version 5.0 or above
-Module    : AzureADPreview Version 2.0.0.154 or above
+Update    : 08-March-2018
+Requires  : PowerShell Version 3.0 or above
+Module    : AzureAD Version 2.0.0.155 or above
 Product   : Azure Active Directory
 
 .LINK
@@ -28,6 +28,7 @@ https://charbelnemnom.com
 .EXAMPLE
 ./Invoke-AzureADBulkUserCreation -FilePath <FilePath> -Credential <Username\Password> -Verbose
 This example will import all users from a CSV File and then create the corresponding account in Azure Active Directory.
+The user will be asked to change his password at first log on.
 #>
 
 [CmdletBinding()]
@@ -40,8 +41,8 @@ Param(
     [PSCredential]$Credential
 )
 Function Install-AzureAD {
-    Set-PSRepository -Name PSGallery -Installation Trusted
-    Install-Module -Name AzureADPreview -AllowClobber -Verbose:$false    
+    Set-PSRepository -Name PSGallery -Installation Trusted -Verbose:$false
+    Install-Module -Name AzureAD -AllowClobber -Verbose:$false
 }
 
 Try {
@@ -55,7 +56,7 @@ Catch {
     }
 
 Try {
-    Import-Module -Name AzureADPreview -ErrorAction Stop -Verbose:$false | Out-Null
+    Import-Module -Name AzureAD -ErrorAction Stop -Verbose:$false | Out-Null
     }
 Catch {
     Write-Verbose "Azure AD PowerShell Module not found..."
@@ -95,12 +96,20 @@ If(!$UserPrincipalName) {
     }
 
 If(!$Password) {
-    Write-Warning "Password is not provided. Setting it to random password"
-    $Password = "Randompwd1$"
+    Write-Warning "Password is not provided for $DisplayName in the CSV file!"
+    $Password = Read-Host -Prompt "Enter desired Password" -AsSecureString
+    $BSTR = [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($Password)
+    $Password = [System.Runtime.InteropServices.Marshal]::PtrToStringAuto($BSTR)
+    $PasswordProfile = New-Object -TypeName Microsoft.Open.AzureAD.Model.PasswordProfile
+    $PasswordProfile.Password = $Password
+    $PasswordProfile.EnforceChangePasswordPolicy = 1
+    $PasswordProfile.ForceChangePasswordNextLogin = 1
     }
 Else {
     $PasswordProfile = New-Object -TypeName Microsoft.Open.AzureAD.Model.PasswordProfile
     $PasswordProfile.Password = $Password
+    $PasswordProfile.EnforceChangePasswordPolicy = 1
+    $PasswordProfile.ForceChangePasswordNextLogin = 1
     }   
     
 Try {    
@@ -118,6 +127,6 @@ Try {
     Write-Verbose "$DisplayName : AAD Account is created successfully!"   
     } 
 Catch {
-    Write-Warning "$DisplayName : Error occurred while creating Azure AD Account. $_"
+    Write-Error "$DisplayName : Error occurred while creating Azure AD Account. $_"
     }
 }
