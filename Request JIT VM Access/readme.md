@@ -34,12 +34,16 @@ If Just in Time VM Access is already enabled, the tool will automatically extrac
 Here are a couple of screenshots showing how to use this tool.
 
 ### Output 1
+![asc-jit-vm-access-posh-03](https://user-images.githubusercontent.com/13448198/44620930-95b81080-a89d-11e8-8b01-51548dde7bad.jpg)
 
 ### Output 2
+![asc-jit-vm-access-posh-06](https://user-images.githubusercontent.com/13448198/44620944-d3b53480-a89d-11e8-8c9d-a052c86a26ff.jpg)
 
 ### Output 3
+![asc-jit-vm-access-posh-07](https://user-images.githubusercontent.com/13448198/44620948-e62f6e00-a89d-11e8-9691-a8a088f98168.jpg)
 
 ### Output 4
+![asc-jit-vm-access-posh-04](https://user-images.githubusercontent.com/13448198/44620955-f8a9a780-a89d-11e8-8e6b-6c740be84f2f.jpg)
 
 ---- Tested environment -----
 - Windows Server 2016, Version 1607 / 1709 / 1803
