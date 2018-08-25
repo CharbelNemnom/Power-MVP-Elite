@@ -25,18 +25,18 @@ This example will enable Just in Time VM Access for a particular Azure VM from a
 If Just in Time VM Access is not enabled, the tool will enable the policy for the VM, you need to provide the maximum requested time in hours.
 
 .EXAMPLE
-.\Request-JITVMAccess.ps1 -VMName <VMName> -Credential <AzureUser@domain.com> -Port <Port> -AddressPrefix <AllowedSourceIP> -Time <Hours> -Verbose
+.\Request-JITVMAccess.ps1 -VMName [VMName] -Credential [AzureUser@domain.com] -Port [PortNumber] -AddressPrefix [AllowedSourceIP] -Time [Hours] -Verbose
 This example will enable Just in Time VM Access for a particular Azure VM including the management port, source IP, and number of hours.
 If Just in Time VM Access is not enabled, the tool will enable the policy for the VM, you need to provide the maximum requested time in hours.
 
 .EXAMPLE
-.\Request-JITVMAccess.ps1 -VMName <VMName> -Credential <AzureUser@domain.com> -Port <Port> -AddressPrefix <AllowedSourceIP> -Verbose
+.\Request-JITVMAccess.ps1 -VMName [VMName] -Credential [AzureUser@domain.com] -Port [PortNumber] -AddressPrefix [AllowedSourceIP] -Verbose
 This example will enable Just in Time VM Access for a particular Azure VM including the management port, and source IP address.
 If Just in Time VM Access is not enabled, the tool will enable the policy for the VM, you need to provide the maximum requested time in hours.
 If Just in Time VM Access is already enabled, the tool will automatically extract the maximum requested time set by the policy, and then request VM access.
 
 .EXAMPLE
-.\Request-JITVMAccess.ps1 -VMName <VMName> -Credential <AzureUser@domain.com> -Port <Port> -Verbose
+.\Request-JITVMAccess.ps1 -VMName [VMName] -Credential [AzureUser@domain.com] -Port [PortNumber] -Verbose
 This example will enable Just in Time VM Access for a particular Azure VM from any source IP. The management port will be set as specified.
 If Just in Time VM Access is not enabled, the tool will enable the policy for the VM, you need to provide the maximum requested time in hours.
 If Just in Time VM Access is already enabled, the tool will automatically extract the maximum requested time set by the policy, and then request VM access.
