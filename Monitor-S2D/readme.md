@@ -21,7 +21,7 @@ $Credential = Get-Credential
 
 .\Monitor-S2D.ps1 -ClusterName "S2DCluster" -Credential $Credential
 
-To run the script as recurring task, update the Cluster Name paramter in Monitor-S2D.ps1 script:
+To run the script as recurring task, update the Cluster Name parameter in Monitor-S2D.ps1 script:
 
 $ClusterName = "S2D-ClusterName"
 
@@ -53,3 +53,4 @@ Here is another alert. The network cable is disconnected. And since I have a red
 This is still version 1.1. If you have any feedback or changes that everyone should receive, please feel free to update the source and create a pull request.
 
 Thank You!
+-Charbel Nemnom-
