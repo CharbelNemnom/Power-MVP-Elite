@@ -20,7 +20,7 @@ To provide feedback or for further assistance please visit:
 https://charbelnemnom.com
 
 .EXAMPLE
-.\Request-JITVMAccess.ps1 -VMName <VMName> -Credential <AzureUser@domain.com> -Port <Port> -Time <Hours> -Verbose
+.\Request-JITVMAccess.ps1 -VMName [VMName] -Credential [AzureUser@domain.com] -Port [PortNumber] -Time [Hours] -Verbose
 This example will enable Just in Time VM Access for a particular Azure VM from any source IP. The management port will be set as specified including the number of hours.
 If Just in Time VM Access is not enabled, the tool will enable the policy for the VM, you need to provide the maximum requested time in hours.
 
