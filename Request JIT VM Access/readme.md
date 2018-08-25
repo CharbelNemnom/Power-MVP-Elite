@@ -45,11 +45,11 @@ Here are a couple of screenshots showing how to use this tool.
 ### Output 4
 ![asc-jit-vm-access-posh-04](https://user-images.githubusercontent.com/13448198/44620955-f8a9a780-a89d-11e8-8e6b-6c740be84f2f.jpg)
 
----- Tested environment -----
+#### ---- Tested environment -----
 - Windows Server 2016, Version 1607 / 1709 / 1803
 - EN-US language OS
 
----- Tested environment -----
+#### ---- Tested environment -----
 - Windows 10, Version 1607 / 1703 / 1709 / 1803
 - EN-US language OS
 
