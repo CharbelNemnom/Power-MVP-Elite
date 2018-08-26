@@ -71,7 +71,7 @@ Function Install-AzureRM {
     Set-PSRepository -Name PSGallery -Installation Trusted -Verbose:$false
     Install-Module -Name AzureRM -AllowClobber -Confirm:$false -Verbose:$false
 }
-Function Install-AzureSecurityCenter {
+Function Install-ASC {
     Set-PSRepository -Name PSGallery -Installation Trusted -Verbose:$false
     Install-Module -Name Azure-Security-Center -AllowClobber -Confirm:$false -Verbose:$false
 }
@@ -101,7 +101,7 @@ Try {
 Catch {
     Write-Warning "Azure Security Center PowerShell Module not found..."
     Write-Verbose "Installing Azure Security Center PowerShell Module..."
-    Install-AzureSecurityCenter
+    Install-ASC
 }
 
 #! Check Azure Cloud Connection
