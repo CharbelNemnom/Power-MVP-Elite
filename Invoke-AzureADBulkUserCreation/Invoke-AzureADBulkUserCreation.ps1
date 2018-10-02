@@ -81,17 +81,17 @@ Foreach($Entry in $CSVData) {
     $Password = $Entry.PasswordProfile
     
 If(!$DisplayName) {
-    Write-Warning "$DisplayName is not provided. Continue to the next record"
+    Write-Warning '$DisplayName is not provided. Continue to the next record'
     Continue
 }
 
 If(!$MailNickName) {
-     Write-Warning "$MailNickName is not provided. Continue to the next record"
+     Write-Warning '$MailNickName is not provided. Continue to the next record'
     Continue
 }
 
 If(!$UserPrincipalName) {
-    Write-Warning "$UserPrincipalName is not provided. Continue to the next record"
+    Write-Warning '$UserPrincipalName is not provided. Continue to the next record'
     Continue
     }
 
