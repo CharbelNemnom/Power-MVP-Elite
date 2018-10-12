@@ -14,9 +14,9 @@ Azure AD Bulk User Creation.
 .NOTES
 File Name : Invoke-AzureADBulkUserCreation.ps1
 Author    : Charbel Nemnom
-Version   : 1.3
+Version   : 1.4
 Date      : 27-February-2018
-Update    : 08-March-2018
+Update    : 02-October-2018
 Requires  : PowerShell Version 3.0 or above
 Module    : AzureAD Version 2.0.0.155 or above
 Product   : Azure Active Directory
@@ -81,17 +81,17 @@ Foreach($Entry in $CSVData) {
     $Password = $Entry.PasswordProfile
     
 If(!$DisplayName) {
-    Write-Warning "$DisplayName is not provided. Continue to the next record"
+    Write-Warning '$DisplayName is not provided. Continue to the next record'
     Continue
 }
 
 If(!$MailNickName) {
-     Write-Warning "$MailNickName is not provided. Continue to the next record"
+     Write-Warning '$MailNickName is not provided. Continue to the next record'
     Continue
 }
 
 If(!$UserPrincipalName) {
-    Write-Warning "$UserPrincipalName is not provided. Continue to the next record"
+    Write-Warning '$UserPrincipalName is not provided. Continue to the next record'
     Continue
     }
 
