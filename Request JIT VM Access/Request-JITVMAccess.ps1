@@ -22,26 +22,30 @@ To provide feedback or for further assistance please visit:
 https://charbelnemnom.com
 
 .EXAMPLE1
-.\Request-JITVMAccess.ps1 -VMName [VMName] -Credential [AzureUser@domain.com] -Port [PortNumber] -Time [Hours] -Verbose
-This example will enable Just in Time VM Access for a particular Azure VM from any source IP. The management port will be set as specified including the number of hours.
+.\Request-JITVMAccess.ps1 -VMName [VMName] -Port [PortNumber] -Time [Hours] -Verbose
+This example will enable Just in Time VM Access for a particular Azure VM from any source IP. The management port will be set as specified including the number of hours. You will be prompted to login to your Azure account.
 If Just in Time VM Access is not enabled, the tool will enable the policy for the VM, you need to provide the maximum requested time in hours.
+If the specified port is not set by the policy previously, the script will enable that port and then request access.
 
 .EXAMPLE2
-.\Request-JITVMAccess.ps1 -VMName [VMName] -Credential [AzureUser@domain.com] -Port [PortNumber] -AddressPrefix [AllowedSourceIP] -Time [Hours] -Verbose
-This example will enable Just in Time VM Access for a particular Azure VM including the management port, source IP, and number of hours.
+.\Request-JITVMAccess.ps1 -VMName [VMName] -Port [PortNumber] -AddressPrefix [AllowedSourceIP] -Time [Hours] -Verbose
+This example will enable Just in Time VM Access for a particular Azure VM including the management port,source IP, and number of hours. You will be prompted to login to your Azure account.
 If Just in Time VM Access is not enabled, the tool will enable the policy for the VM, you need to provide the maximum requested time in hours.
+If the specified port is not set by the policy previously, the script will enable that port and then request access.
 
 .EXAMPLE3
-.\Request-JITVMAccess.ps1 -VMName [VMName] -Credential [AzureUser@domain.com] -Port [PortNumber] -AddressPrefix [AllowedSourceIP] -Verbose
-This example will enable Just in Time VM Access for a particular Azure VM including the management port, and source IP address.
+.\Request-JITVMAccess.ps1 -VMName [VMName] -Port [PortNumber] -AddressPrefix [AllowedSourceIP] -Verbose
+This example will enable Just in Time VM Access for a particular Azure VM including the management port,and source IP address. You will be prompted to login to your Azure account.
 If Just in Time VM Access is not enabled, the tool will enable the policy for the VM, you need to provide the maximum requested time in hours.
 If Just in Time VM Access is already enabled, the tool will automatically extract the maximum requested time set by the policy, and then request VM access.
+If the specified port is not set by the policy previously, the script will enable that port and then request access.
 
 .EXAMPLE4
-.\Request-JITVMAccess.ps1 -VMName [VMName] -Credential [AzureUser@domain.com] -Port [PortNumber] -Verbose
-This example will enable Just in Time VM Access for a particular Azure VM from any source IP. The management port will be set as specified.
+.\Request-JITVMAccess.ps1 -VMName [VMName] -Port [PortNumber] -Verbose
+This example will enable Just in Time VM Access for a particular Azure VM from any source IP. The management port will be set as specified. You will be prompted to login to your Azure account.
 If Just in Time VM Access is not enabled, the tool will enable the policy for the VM, you need to provide the maximum requested time in hours.
 If Just in Time VM Access is already enabled, the tool will automatically extract the maximum requested time set by the policy, and then request VM access.
+If the specified port is not set by the policy previously, the script will enable that port and then request access.
 #>
 
 [CmdletBinding()]
