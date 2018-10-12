@@ -44,26 +44,26 @@ If Just in Time VM Access is already enabled, the tool will automatically extrac
 
 [CmdletBinding()]
 Param(
-    [Parameter(Position=0, Mandatory=$True, HelpMessage='Specify the VM Name')]
+    [Parameter(Position = 0, Mandatory = $True, HelpMessage = 'Specify the VM Name')]
     [Alias('VM')]
     [String]$VMName,
 
-    [Parameter(Position=1, Mandatory=$True, HelpMessage='Specify Azure Credentials')]
+    [Parameter(Position = 1, Mandatory = $True, HelpMessage = 'Specify Azure Credentials')]
     [Alias('AzureCred')]
     [PSCredential]$Credential,
     
-    [Parameter(Position=2, Mandatory=$True, HelpMessage='Specify remote access port, must be a number between 1 and 65535.')]
+    [Parameter(Position = 2, Mandatory = $True, HelpMessage = 'Specify remote access port, must be a number between 1 and 65535.')]
     [Alias('AccessPort')]
-    [ValidateRange(1,65535)]
+    [ValidateRange(1, 65535)]
     [Int]$Port,
     
-    [Parameter(Position=3, HelpMessage='Source IP Address Prefix. (IP Address, CIDR block, or *) Default = * (Any)')]
+    [Parameter(Position = 3, HelpMessage = 'Source IP Address Prefix. (IP Address, CIDR block, or *) Default = * (Any)')]
     [Alias('SourceIP')]
     [String]$AddressPrefix = '*',
 
-    [Parameter(Position=4, HelpMessage='Specify time range in hours, valid range: 1-24 hours')]
+    [Parameter(Position = 4, HelpMessage = 'Specify time range in hours, valid range: 1-24 hours')]
     [Alias('Hours')]
-    [ValidateRange(1,24)]
+    [ValidateRange(1, 24)]
     [Int]$Time    
 
 )
@@ -75,18 +75,19 @@ Function Install-ASC {
     Set-PSRepository -Name PSGallery -Installation Trusted -Verbose:$false
     Install-Module -Name Azure-Security-Center -AllowClobber -Confirm:$false -Verbose:$false
 }
-Function ExtractMaxDuration ([string]$InStr){
-   $Out = $InStr -replace("[^\d]")
-   try{return [int]$Out}
-       catch{}
-   try{return [uint64]$Out}
-       catch{return 0}}
+Function ExtractMaxDuration ([string]$InStr) {
+    $Out = $InStr -replace ("[^\d]")
+    try {return [int]$Out}
+    catch {}
+    try {return [uint64]$Out}
+    catch {return 0}
+}
 
 #! Check AzureRM PowerShell Module
 Try {
     Import-Module -Name AzureRM -ErrorAction Stop -Verbose:$false | Out-Null
     Write-Verbose "Importing Azure RM PowerShell Module..."
-    }
+}
 Catch {
     Write-Warning "Azure Resource Manager PowerShell Module not found..."
     Write-Verbose "Installing Azure Resource Manager PowerShell Module..."
@@ -97,7 +98,7 @@ Catch {
 Try {
     Import-Module -Name Azure-Security-Center -WarningAction SilentlyContinue -Verbose:$false | Out-Null
     Write-Verbose "Importing Azure Security Center PowerShell Module..."
-    }
+}
 Catch {
     Write-Warning "Azure Security Center PowerShell Module not found..."
     Write-Verbose "Installing Azure Security Center PowerShell Module..."
@@ -108,18 +109,18 @@ Catch {
 Try {
     Write-Verbose "Connecting to Azure Cloud..."
     Login-AzureRmAccount -Environment AzureCloud -Credential $Credential -ErrorAction Stop | Out-Null
-  }
+}
 Catch {
     Write-Warning "Cannot connect to Azure environment. Please check your credentials. Exiting!"
     Break
 }
 
 #! Get Azure Virtual Machine Info
-$VMInfo = Get-AzureRMVM | ?{$_.Name -eq "$VMName"}
+$VMInfo = Get-AzureRMVM | ? {$_.Name -eq "$VMName"}
 
 If (!$VMInfo) {
-Write-Warning "Azure virtual machine ($VMName) cannot be found. Please check your virtual machine name. Exiting!"
-Break
+    Write-Warning "Azure virtual machine ($VMName) cannot be found. Please check your virtual machine name. Exiting!"
+    Break
 }
 
 $VMAccessPolicy = Get-ASCJITAccessPolicy | Select -ExpandProperty Properties | Select -ExpandProperty VirtualMachines | Where-Object {$_.id -like "*$VMName*"} | Select -Property Ports
@@ -127,15 +128,14 @@ $VMAccessPolicy = Get-ASCJITAccessPolicy | Select -ExpandProperty Properties | S
 If (!$VMAccessPolicy) {
     Write-Warning "Just in Time VM Access is not enabled for Azure VM ($VMName)"
     if (-Not $time) {
-    Try {
-    $time = Read-Host "`nEnter Max Requested Time in Hours, valid range: 1-24 hours"
+        Try {
+            $time = Read-Host "`nEnter Max Requested Time in Hours, valid range: 1-24 hours"
         }
-    Catch {
-        Write-Warning "The maximum requested time entered is not in the valid range: 1-24 hours" 
-        Break
+        Catch {
+            Write-Warning "The maximum requested time entered is not in the valid range: 1-24 hours" 
+            Break
         }
     }
-
     #! Enable Access to the VM including management Port, and Time Range in Hours
     Write-Verbose "Enabling Just in Time VM Access Policy for ($VMName)"
     Set-ASCJITAccessPolicy -VM $VMInfo.Name -ResourceGroupName $VMInfo.ResourceGroupName -Port $Port -Protocol * -AllowedSourceAddressPrefix $AddressPrefix -MaxRequestHour $time   
@@ -144,7 +144,7 @@ If (!$VMAccessPolicy) {
 #! Request Access to the VM including management Port, Source IP and Time Range in Hours
 if (-Not $time) {
     $VMAccessPolicy.PSObject.Properties | foreach-object {
-    $value = $_.Value
+        $value = $_.Value
     }
     $MaxRequest = $value | where-object {$_.Number -eq "$Port"}
     $Time = ExtractMaxDuration $MaxRequest.maxRequestAccessDuration
