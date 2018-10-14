@@ -226,7 +226,7 @@ $AccessPolicy = $VMAccessPolicy | Where-Object {$_.Number -eq "$Port"}
 }
 
 #! Request Access to the VM including management Port, Source IP and Time range in Hours
-#! If time is NOT specified, then Extract Max Time and request VM access
+#! If time is NOT specified, then extract max time and request VM access
 If (!$Time) {
    $AccessPolicy = $VMAccessPolicy | Where-Object {$_.Number -eq "$Port"}
    $Time = ExtractMaxDuration $AccessPolicy.MaxRequestAccessDuration
