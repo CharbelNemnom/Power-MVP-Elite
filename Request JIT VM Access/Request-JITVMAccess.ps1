@@ -75,27 +75,22 @@ Param(
     [Int]$Time    
 
 )
-
 Function Install-PackageManagement {
     Set-PSRepository -Name PSGallery -Installation Trusted -Verbose:$false
     Install-Module -Name PackageManagement -Force -Confirm:$false -Verbose:$false
 }
-
 Function Install-PowerShellGet {
     Set-PSRepository -Name PSGallery -Installation Trusted -Verbose:$false
     Install-Module -Name PowerShellGet -Force -Confirm:$false -Verbose:$false
 }
-
 Function Install-AzureRM {
     Set-PSRepository -Name PSGallery -Installation Trusted -Verbose:$false
     Install-Module -Name AzureRM -Confirm:$false -Verbose:$false
 }
-
 Function Install-AzureSecurity {
     Set-PSRepository -Name PSGallery -Installation Trusted -Verbose:$false
     Install-Module -Name AzureRM.Security -AllowPrerelease -Confirm:$false -Verbose:$false
 }
-
 Function ExtractMaxDuration ([string]$InStr){
    $Out = $InStr -replace("[^\d]")
    try{return [int]$Out}
@@ -117,7 +112,6 @@ Function Enable-JITVMAccess {
     Write-Verbose "Enabling Just in Time VM Access Policy for ($VMName) on port number $Port for maximum $time hours..."
     Set-AzureRmJitNetworkAccessPolicy -VirtualMachine $JitPolicyArr -ResourceGroupName $VMInfo.ResourceGroupName -Location $VMInfo.Location -Name "default" -Kind "Basic" | Out-Null
 }
-
 Function Invoke-JITVMAccess {
     $SubID = (Get-AzureRmContext).Subscription.Id
     $JitPolicy = (@{
