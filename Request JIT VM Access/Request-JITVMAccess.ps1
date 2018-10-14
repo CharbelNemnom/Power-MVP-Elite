@@ -245,7 +245,7 @@ Else {
    $AccessPolicy = $VMAccessPolicy | Where-Object {$_.Number -eq "$Port"}
    $TimeSet = ExtractMaxDuration $AccessPolicy.MaxRequestAccessDuration
    #! If the time specified is greater than the time set by the policy
-   If ($Time -gt $TimeSet) {
+   If ($AccessPolicy -and $Time -gt $TimeSet) {
    do {
         Write-Warning "The requested access time for ($VMName) is not within the allowed time policy..."
         $Time = Read-Host "`nEnter access request Time in Hours, valid range: 1-$TimeSet hours"
