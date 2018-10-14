@@ -3,7 +3,10 @@
 
 This tool is written to automate the entire Just In Time VM Access process. The script will connect to Azure Security Center endpoint, and then will open the requested port temporarily. If Just in Time VM Access is not enabled for that VM, the script will enable it, and then request VM access on your behalf. Additionally, the script will automatically install Azure Resource Manager and Azure Security Center PowerShell modules if they are not installed on your machine.
 
-You can run the script in multiple scenarios as follows:
+I have updated this tool to create a role definition with least privilege (just enough permissions), so the users will be able to enable and request access without having to wait for support calls to enable access. When a user requests access to a VM, Azure Security Center checks that the user has Role-Based Access Control (RBAC) permissions that provide write access for the VM. If they have write permissions, the request is approved.
+You need to run .\Create-JitRBACRole.ps1 script only one time.
+
+You can run this tool in multiple scenarios as follows:
 
 ### EXAMPLE -1-
 * .\Request-JITVMAccess.ps1 -VMName [VMName] -Port [PortNumber] -Time [Hours] -Verbose
