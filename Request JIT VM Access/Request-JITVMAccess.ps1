@@ -217,7 +217,7 @@ Else {
 #! Check if the specified Port is enabled in Azure Security Center
 $AccessPolicy = $VMAccessPolicy | Where-Object {$_.Number -eq "$Port"}
     If (!$AccessPolicy) {
-    Write-Warning "The Specified management port for ($VMName) is not enabled in Azure Security Center..."
+    Write-Warning "The Specified management port $Port for ($VMName) is not enabled in Azure Security Center..."
     do {
     $Time = Read-Host "`nEnter Max Requested Time in Hours, valid range: 1-24 hours"
        } Until ($Time -le 24)
