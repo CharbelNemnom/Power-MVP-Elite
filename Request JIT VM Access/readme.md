@@ -43,24 +43,24 @@ If the specified management port is not set by the policy previously, the script
 
 Here are a couple of screenshots showing you how to use this tool.
 
-### Output 1
-![asc-jit-vm-access-posh-03](https://user-images.githubusercontent.com/13448198/44620930-95b81080-a89d-11e8-8b01-51548dde7bad.jpg)
+### Output EXAMPLE -1-
+![asc-jit-vm-access-posh-v2-04](https://user-images.githubusercontent.com/13448198/46915702-59588500-cfaf-11e8-8611-c9ff728d3e1a.jpg)
 
-### Output 2
-![asc-jit-vm-access-posh-06](https://user-images.githubusercontent.com/13448198/44620944-d3b53480-a89d-11e8-8c9d-a052c86a26ff.jpg)
+### Output EXAMPLE -2-
+![asc-jit-vm-access-posh-v2-05](https://user-images.githubusercontent.com/13448198/46915704-5cec0c00-cfaf-11e8-901a-8a19172694d5.jpg)
 
-### Output 3
-![asc-jit-vm-access-posh-07](https://user-images.githubusercontent.com/13448198/44620948-e62f6e00-a89d-11e8-9691-a8a088f98168.jpg)
+### Output EXAMPLE -3-
+![asc-jit-vm-access-posh-v2-06](https://user-images.githubusercontent.com/13448198/46915706-5eb5cf80-cfaf-11e8-8b85-4c416bb99033.jpg)
 
-### Output 4
-![asc-jit-vm-access-posh-04](https://user-images.githubusercontent.com/13448198/44620955-f8a9a780-a89d-11e8-8e6b-6c740be84f2f.jpg)
+### Output EXAMPLE -4-
+![asc-jit-vm-access-posh-v2-07](https://user-images.githubusercontent.com/13448198/46915707-607f9300-cfaf-11e8-8ef3-b608f1a1b45f.jpg)
 
 #### ---- Tested environment -----
-- Windows Server 2016, Version 1607 / 1709 / 1803
+- Windows Server 2016, Version 1607 / 1709 / 1803 / 1809
 - EN-US language OS
 
 #### ---- Tested environment -----
-- Windows 10, Version 1607 / 1703 / 1709 / 1803
+- Windows 10, Version 1607 / 1703 / 1709 / 1803 / 1809
 - EN-US language OS
 
 If you have any feedback or changes that everyone should receive, please feel free to leave a comment, update the source code and create a pull request.
