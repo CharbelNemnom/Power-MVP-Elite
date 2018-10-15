@@ -72,8 +72,7 @@ Param(
     [Parameter(Position = 3, HelpMessage = 'Specify time range in hours, valid range: 1-24 hours')]
     [Alias('Hours')]
     [ValidateRange(1, 24)]
-    [Int]$Time    
-
+    [Int]$Time
 )
 
 Function Install-PackageManagement {
