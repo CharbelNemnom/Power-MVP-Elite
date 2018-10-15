@@ -56,22 +56,22 @@ If the specified management port is not set by the policy previously, the script
 
 [CmdletBinding()]
 Param(
-    [Parameter(Position=0, Mandatory=$True, HelpMessage='Specify the VM Name')]
+    [Parameter(Position = 0, Mandatory = $True, HelpMessage = 'Specify the VM Name')]
     [Alias('VM')]
     [String]$VMName,
  
-    [Parameter(Position=1, Mandatory=$True, HelpMessage='Specify remote access port, must be a number between 1 and 65535.')]
+    [Parameter(Position = 1, Mandatory = $True, HelpMessage = 'Specify remote access port, must be a number between 1 and 65535.')]
     [Alias('AccessPort')]
-    [ValidateRange(1,65535)]
+    [ValidateRange(1, 65535)]
     [Int]$Port,
     
-    [Parameter(Position=2, HelpMessage='Source IP Address Prefix. (IP Address, or CIDR block) Default = Your IP')]
+    [Parameter(Position = 2, HelpMessage = 'Source IP Address Prefix. (IP Address, or CIDR block) Default = Your IP')]
     [Alias('SourceIP')]
     [String]$AddressPrefix,
 
-    [Parameter(Position=3, HelpMessage='Specify time range in hours, valid range: 1-24 hours')]
+    [Parameter(Position = 3, HelpMessage = 'Specify time range in hours, valid range: 1-24 hours')]
     [Alias('Hours')]
-    [ValidateRange(1,24)]
+    [ValidateRange(1, 24)]
     [Int]$Time    
 
 )
@@ -84,50 +84,48 @@ Function Install-PowerShellGet {
     Set-PSRepository -Name PSGallery -Installation Trusted -Verbose:$false
     Install-Module -Name PowerShellGet -Force -Confirm:$false -Verbose:$false
 }
-
 Function Install-AzureRM {
     Set-PSRepository -Name PSGallery -Installation Trusted -Verbose:$false
     Install-Module -Name AzureRM -AllowClobber -Confirm:$false -Verbose:$false
 }
-
 Function Install-AzureSecurity {
     Set-PSRepository -Name PSGallery -Installation Trusted -Verbose:$false
     Install-Module -Name AzureRM.Security -AllowPrerelease -Confirm:$false -Verbose:$false
 }
-
-Function ExtractMaxDuration ([string]$InStr){
-   $Out = $InStr -replace("[^\d]")
-   try{return [int]$Out}
-       catch{}
-   try{return [uint64]$Out}
-       catch{return 0}}
-
+Function ExtractMaxDuration ([string]$InStr) {
+    $Out = $InStr -replace ("[^\d]")
+    try {return [int]$Out}
+    catch {}
+    try {return [uint64]$Out}
+    catch {return 0}
+}
 Function Enable-JITVMAccess {
     $JitPolicy = (@{
-        id="$($VMInfo.Id)"
-            ports=(@{
-            number=$Port;
-            protocol="*";
-            allowedSourceAddressPrefix=@("$AddressPrefix");
-            maxRequestAccessDuration="PT$($time)H"})   
-   })
-    $JitPolicyArr=@($JitPolicy)
+            id    = "$($VMInfo.Id)"
+            ports = (@{
+                    number                     = $Port;
+                    protocol                   = "*";
+                    allowedSourceAddressPrefix = @("$AddressPrefix");
+                    maxRequestAccessDuration   = "PT$($time)H"
+                })   
+        })
+    $JitPolicyArr = @($JitPolicy)
     #! Enable Access to the VM including management Port, and Time Range in Hours
     Write-Verbose "Enabling Just in Time VM Access Policy for ($VMName) on port number $Port for maximum $time hours..."
     Set-AzureRmJitNetworkAccessPolicy -VirtualMachine $JitPolicyArr -ResourceGroupName $VMInfo.ResourceGroupName -Location $VMInfo.Location -Name "default" -Kind "Basic" | Out-Null
 }
-
 Function Invoke-JITVMAccess {
     $SubID = (Get-AzureRmContext).Subscription.Id
     $JitPolicy = (@{
-        id="$($VMInfo.Id)"
-            ports=(@{
-            number=$Port;
-            endTimeUtc="$endTimeUtc";  
-            allowedSourceAddressPrefix=@("$AddressPrefix")})
+            id    = "$($VMInfo.Id)"
+            ports = (@{
+                    number                     = $Port;
+                    endTimeUtc                 = "$endTimeUtc";  
+                    allowedSourceAddressPrefix = @("$AddressPrefix")
+                })
              
-   })
-    $JitPolicyArr=@($JitPolicy)
+        })
+    $JitPolicyArr = @($JitPolicy)
     Write-Verbose "Enabling VM Request access for ($VMName) from IP $AddressPrefix on port number $Port for $Time hours..."
     Start-AzureRmJitNetworkAccessPolicy -ResourceId "/subscriptions/$SubID/resourceGroups/$($VMInfo.ResourceGroupName)/providers/Microsoft.Security/locations/$($VMInfo.Location)/jitNetworkAccessPolicies/default" -VirtualMachine $JitPolicyArr | Out-Null
 }
@@ -136,7 +134,7 @@ Function Invoke-JITVMAccess {
 Try {
     Import-Module -Name PackageManagement -RequiredVersion 1.1.7.2 -ErrorAction Stop -Verbose:$false | Out-Null
     Write-Verbose "Importing PowerShell PackageManagement Module..."
-    }
+}
 Catch {
     Write-Warning "PowerShell PackageManagement Module requires update..."
     Write-Verbose "Installing the latest PowerShell PackageManagement Module..."
@@ -147,7 +145,7 @@ Catch {
 Try {
     Import-Module -Name PowerShellGet -RequiredVersion 1.6.7 -ErrorAction Stop -Verbose:$false | Out-Null
     Write-Verbose "Importing PowerShellGet Module..."
-    }
+}
 Catch {
     Write-Warning "PowerShellGet Module requires update..."
     Write-Verbose "Installing the latest PowerShellGet Module..."
@@ -158,7 +156,7 @@ Catch {
 Try {
     Import-Module -Name AzureRM -MinimumVersion 6.10.0 -ErrorAction Stop -Verbose:$false | Out-Null
     Write-Verbose "Importing Azure RM PowerShell Module..."
-    }
+}
 Catch {
     Write-Warning "Azure RM Module requies update..."
     Write-Verbose "Installing the latest Azure RM Module..."
@@ -169,7 +167,7 @@ Catch {
 Try {
     Import-Module -Name AzureRM.Security -ErrorAction Stop -Verbose:$false | Out-Null
     Write-Verbose "Importing Azure RM Security PowerShell Module..."
-    }
+}
 Catch {
     Write-Warning "Azure RM Security PowerShell Module was not found..."
     Write-Verbose "Installing Azure RM Security PowerShell Module..."
@@ -180,7 +178,7 @@ Catch {
 Try {
     Write-Verbose "Connecting to Azure Cloud..."
     Login-AzureRmAccount -Environment AzureCloud -ErrorAction Stop | Out-Null
-  }
+}
 Catch {
     Write-Warning "Cannot connect to Azure environment. Please check your credentials. Exiting!"
     Break
@@ -189,7 +187,7 @@ Catch {
 #! Get Azure Virtual Machine Info
 Write-Verbose "Get all Azure Subscriptions..."
 $AzureSubscriptions = Get-AzureRmSubscription | Where-Object {$_.Name -notlike "*Azure Active Directory*"}
-$MaxSub = ($AzureSubscriptions.Count)-1
+$MaxSub = ($AzureSubscriptions.Count) - 1
 $Sub = 0
 do {
     Set-AzureRmContext -SubscriptionId $AzureSubscriptions[$Sub].Id | Out-Null
@@ -198,64 +196,64 @@ do {
 } Until ($VMInfo.Name -eq "$VMName" -or $Sub -gt $MaxSub)
    
 If (!$VMInfo) {
-Write-Warning "Azure virtual machine ($VMName) cannot be found. Please check your virtual machine name. Exiting!"
-Break
+    Write-Warning "Azure virtual machine ($VMName) cannot be found. Please check your virtual machine name. Exiting!"
+    Break
 }
 
 $VMAccessPolicy = (Get-AzureRmJitNetworkAccessPolicy).VirtualMachines | Where-Object {$_.Id -like "*$VMName*"} | Select -ExpandProperty Ports
 
 If (!$AddressPrefix) {
-$AddressPrefix = Invoke-RestMethod 'http://ipinfo.io/json' -Verbose:$false | Select-Object -ExpandProperty IP
+    $AddressPrefix = Invoke-RestMethod 'http://ipinfo.io/json' -Verbose:$false | Select-Object -ExpandProperty IP
 }
 
 #! Check if Just in Time VM Access is enabled
 If (!$VMAccessPolicy) {
     Write-Warning "Just in Time VM Access is not enabled for ($VMName)..."
     if (-Not $Time) {
-    do {
-    $Time = Read-Host "`nEnter Max Requested Time in Hours, valid range: 1-24 hours"
-       } Until ($Time -le 24)
+        do {
+            $Time = Read-Host "`nEnter Max Requested Time in Hours, valid range: 1-24 hours"
+        } Until ($Time -le 24)
     }
     Enable-JITVMAccess    
 }
 Else {
-#! Check if the specified Port is enabled in Azure Security Center
-$AccessPolicy = $VMAccessPolicy | Where-Object {$_.Number -eq "$Port"}
+    #! Check if the specified Port is enabled in Azure Security Center
+    $AccessPolicy = $VMAccessPolicy | Where-Object {$_.Number -eq "$Port"}
     If (!$AccessPolicy) {
-    Write-Warning "The Specified management port $Port for ($VMName) is not enabled in Azure Security Center..."
-    do {
-    $Time = Read-Host "`nEnter Max Requested Time in Hours, valid range: 1-24 hours"
-       } Until ($Time -le 24)
-    Enable-JITVMAccess
+        Write-Warning "The Specified management port $Port for ($VMName) is not enabled in Azure Security Center..."
+        do {
+            $Time = Read-Host "`nEnter Max Requested Time in Hours, valid range: 1-24 hours"
+        } Until ($Time -le 24)
+        Enable-JITVMAccess
     }
 }
 
 #! Request Access to the VM including management Port, Source IP and Time range in Hours
 #! If time is NOT specified, then extract max time and request VM access
 If (!$Time) {
-   $AccessPolicy = $VMAccessPolicy | Where-Object {$_.Number -eq "$Port"}
-   $Time = ExtractMaxDuration $AccessPolicy.MaxRequestAccessDuration
-   $Date = (Get-Date).ToUniversalTime().AddHours($Time) 
-   $endTimeUtc = Get-Date -Date $Date -Format o
-   Invoke-JITVMAccess
+    $AccessPolicy = $VMAccessPolicy | Where-Object {$_.Number -eq "$Port"}
+    $Time = ExtractMaxDuration $AccessPolicy.MaxRequestAccessDuration
+    $Date = (Get-Date).ToUniversalTime().AddHours($Time) 
+    $endTimeUtc = Get-Date -Date $Date -Format o
+    Invoke-JITVMAccess
 }
 #! If time is specified, then Extract Max Time and validate
 Else {
-   $AccessPolicy = $VMAccessPolicy | Where-Object {$_.Number -eq "$Port"}
-   $TimeSet = ExtractMaxDuration $AccessPolicy.MaxRequestAccessDuration
-   #! If the time specified is greater than the time set by the policy
-   If ($AccessPolicy -and $Time -gt $TimeSet) {
-   do {
-        Write-Warning "The requested access time for ($VMName) is not within the allowed time policy..."
-        $Time = Read-Host "`nEnter access request Time in Hours, valid range: 1-$TimeSet hours"
-      } until ($Time -le $TimeSet)
-   $Date = (Get-Date).ToUniversalTime().AddHours($Time) 
-   $endTimeUtc = Get-Date -Date $Date -Format o
-   Invoke-JITVMAccess
-   }
-   Else {
-   $Date = (Get-Date).ToUniversalTime().AddHours($Time) 
-   $endTimeUtc = Get-Date -Date $Date -Format o
-   Invoke-JITVMAccess
-   }
+    $AccessPolicy = $VMAccessPolicy | Where-Object {$_.Number -eq "$Port"}
+    $TimeSet = ExtractMaxDuration $AccessPolicy.MaxRequestAccessDuration
+    #! If the time specified is greater than the time set by the policy
+    If ($AccessPolicy -and $Time -gt $TimeSet) {
+        do {
+            Write-Warning "The requested access time for ($VMName) is not within the allowed time policy..."
+            $Time = Read-Host "`nEnter access request Time in Hours, valid range: 1-$TimeSet hours"
+        } until ($Time -le $TimeSet)
+        $Date = (Get-Date).ToUniversalTime().AddHours($Time) 
+        $endTimeUtc = Get-Date -Date $Date -Format o
+        Invoke-JITVMAccess
+    }
+    Else {
+        $Date = (Get-Date).ToUniversalTime().AddHours($Time) 
+        $endTimeUtc = Get-Date -Date $Date -Format o
+        Invoke-JITVMAccess
+    }
 }
