@@ -101,6 +101,7 @@ Function ExtractMaxDuration ([string]$InStr) {
     try {return [uint64]$Out}
     catch {return 0}
 }
+
 Function Enable-JITVMAccess {
     $JitPolicy = (@{
             id    = "$($VMInfo.Id)"
