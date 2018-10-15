@@ -129,7 +129,7 @@ Function Invoke-JITVMAccess {
 
 #! Check PowerShell Package Management Module
 Try {
-    Import-Module -Name PackageManagement -MinimumVersion 1.1.7.2 -ErrorAction Stop -Verbose:$false | Out-Null
+    Import-Module -Name PackageManagement -RequiredVersion 1.1.7.2 -ErrorAction Stop -Verbose:$false | Out-Null
     Write-Verbose "Importing PowerShell PackageManagement Module..."
     }
 Catch {
@@ -140,7 +140,7 @@ Catch {
 
 #! Check PowerShellGet Module
 Try {
-    Import-Module -Name PowerShellGet -MinimumVersion 1.6.7 -ErrorAction Stop -Verbose:$false | Out-Null
+    Import-Module -Name PowerShellGet -RequiredVersion 1.6.7 -ErrorAction Stop -Verbose:$false | Out-Null
     Write-Verbose "Importing PowerShellGet Module..."
     }
 Catch {
@@ -151,12 +151,12 @@ Catch {
 
 #! Check AzureRM PowerShell Module
 Try {
-    Import-Module -Name AzureRM -MinimumVersion 6.7.0 -ErrorAction Stop -Verbose:$false | Out-Null
+    Import-Module -Name AzureRM -RequiredVersion 6.7.0 -ErrorAction Stop -Verbose:$false | Out-Null
     Write-Verbose "Importing Azure RM PowerShell Module..."
     }
 Catch {
     Write-Warning "Azure RM Module was not found..."
-    Write-Verbose "Installing Azure RM Module..."
+    Write-Verbose "Installing the latest Azure RM Module..."
     Install-AzureRM
 }
 
