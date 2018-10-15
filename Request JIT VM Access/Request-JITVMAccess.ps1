@@ -155,7 +155,7 @@ Try {
     Write-Verbose "Importing Azure RM PowerShell Module..."
     }
 Catch {
-    Write-Warning "Azure RM Module was not found..."
+    Write-Warning "Azure RM Module requires update..."
     Write-Verbose "Installing the latest Azure RM Module..."
     Install-AzureRM
 }
