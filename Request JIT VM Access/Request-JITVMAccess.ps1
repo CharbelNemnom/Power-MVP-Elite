@@ -85,7 +85,7 @@ Function Install-PowerShellGet {
 }
 Function Install-AzureRM {
     Set-PSRepository -Name PSGallery -Installation Trusted -Verbose:$false
-    Install-Module -Name AzureRM -Confirm:$false -Verbose:$false
+    Install-Module -Name AzureRM -MaximumVersion -Confirm:$false -Verbose:$false    
 }
 Function Install-AzureSecurity {
     Set-PSRepository -Name PSGallery -Installation Trusted -Verbose:$false
