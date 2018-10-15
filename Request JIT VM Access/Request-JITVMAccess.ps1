@@ -75,22 +75,26 @@ Param(
     [Int]$Time    
 
 )
+
 Function Install-PackageManagement {
-    Set-PSRepository -Name PSGallery -Installation Trusted -Verbose:$false
-    Install-Module -Name PackageManagement -Force -Confirm:$false -Verbose:$false
+    Install-PackageProvider -Name Nuget -Force -Confirm:$false -Verbose:$false
 }
+
 Function Install-PowerShellGet {
     Set-PSRepository -Name PSGallery -Installation Trusted -Verbose:$false
     Install-Module -Name PowerShellGet -Force -Confirm:$false -Verbose:$false
 }
+
 Function Install-AzureRM {
     Set-PSRepository -Name PSGallery -Installation Trusted -Verbose:$false
-    Install-Module -Name AzureRM -MaximumVersion -Confirm:$false -Verbose:$false    
+    Install-Module -Name AzureRM -AllowClobber -Confirm:$false -Verbose:$false
 }
+
 Function Install-AzureSecurity {
     Set-PSRepository -Name PSGallery -Installation Trusted -Verbose:$false
     Install-Module -Name AzureRM.Security -AllowPrerelease -Confirm:$false -Verbose:$false
 }
+
 Function ExtractMaxDuration ([string]$InStr){
    $Out = $InStr -replace("[^\d]")
    try{return [int]$Out}
@@ -112,6 +116,7 @@ Function Enable-JITVMAccess {
     Write-Verbose "Enabling Just in Time VM Access Policy for ($VMName) on port number $Port for maximum $time hours..."
     Set-AzureRmJitNetworkAccessPolicy -VirtualMachine $JitPolicyArr -ResourceGroupName $VMInfo.ResourceGroupName -Location $VMInfo.Location -Name "default" -Kind "Basic" | Out-Null
 }
+
 Function Invoke-JITVMAccess {
     $SubID = (Get-AzureRmContext).Subscription.Id
     $JitPolicy = (@{
@@ -133,7 +138,7 @@ Try {
     Write-Verbose "Importing PowerShell PackageManagement Module..."
     }
 Catch {
-    Write-Warning "PowerShell PackageManagement Module was not found..."
+    Write-Warning "PowerShell PackageManagement Module requires update..."
     Write-Verbose "Installing the latest PowerShell PackageManagement Module..."
     Install-PackageManagement
 }
@@ -144,18 +149,18 @@ Try {
     Write-Verbose "Importing PowerShellGet Module..."
     }
 Catch {
-    Write-Warning "PowerShellGet Module was not found..."
+    Write-Warning "PowerShellGet Module requires update..."
     Write-Verbose "Installing the latest PowerShellGet Module..."
     Install-PowerShellGet
 }
 
 #! Check AzureRM PowerShell Module
 Try {
-    Import-Module -Name AzureRM -RequiredVersion 6.7.0 -ErrorAction Stop -Verbose:$false | Out-Null
+    Import-Module -Name AzureRM -MinimumVersion 6.10.0 -ErrorAction Stop -Verbose:$false | Out-Null
     Write-Verbose "Importing Azure RM PowerShell Module..."
     }
 Catch {
-    Write-Warning "Azure RM Module requires update..."
+    Write-Warning "Azure RM Module requies update..."
     Write-Verbose "Installing the latest Azure RM Module..."
     Install-AzureRM
 }
