@@ -163,11 +163,11 @@ Catch {
 #! Check Azure Security PowerShell Module
 Try {
     Import-Module -Name AzureRM.Security -ErrorAction Stop -Verbose:$false | Out-Null
-    Write-Verbose "Importing Azure Security PowerShell Module..."
+    Write-Verbose "Importing Azure RM Security PowerShell Module..."
     }
 Catch {
-    Write-Warning "Azure Security PowerShell Module was not found..."
-    Write-Verbose "Installing Azure Security PowerShell Module..."
+    Write-Warning "Azure RM Security PowerShell Module was not found..."
+    Write-Verbose "Installing Azure RM Security PowerShell Module..."
     Install-AzureSecurity
 }
 
