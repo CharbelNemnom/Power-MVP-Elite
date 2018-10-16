@@ -10,7 +10,7 @@ File Name : Request-JITVMAccess.ps1
 Author    : Charbel Nemnom
 Version   : 2.0
 Date      : 20-August-2018
-Updated   : 15-October-2018
+Updated   : 16-October-2018
 Requires  : PowerShell Version 5.1 or later
 Module    : AzureRM Version 6.10.0 or later
 Module    : AzureRM.Security Version 0.2.0 (preview)
