@@ -12,7 +12,7 @@ Version   : 2.0
 Date      : 20-August-2018
 Updated   : 15-October-2018
 Requires  : PowerShell Version 5.1 or later
-Module    : AzureRM Version 6.7.0 or later
+Module    : AzureRM Version 6.10.0 or later
 Module    : AzureRM.Security Version 0.2.0 (preview)
 Module    : PowerShellGet Version 1.6.7 or later
 Module    : PowerShell PackageManagement Version 1.1.7.2 or later
@@ -76,17 +76,18 @@ Param(
 )
 
 Function Install-PackageManagement {
-    Install-PackageProvider -Name Nuget -Force -Confirm:$false -Verbose:$false
+    Set-PSRepository -Name PSGallery -Installation Trusted -Verbose:$false
+    Install-Module -Name PackageManagement  -RequiredVersion 1.1.7.2 -Confirm:$false -Verbose:$false
 }
 
 Function Install-PowerShellGet {
     Set-PSRepository -Name PSGallery -Installation Trusted -Verbose:$false
-    Install-Module -Name PowerShellGet -Force -Confirm:$false -Verbose:$false
+    Install-Module -Name PowerShellGet -RequiredVersion 1.6.7 -Confirm:$false -Verbose:$false
 }
 
 Function Install-AzureRM {
     Set-PSRepository -Name PSGallery -Installation Trusted -Verbose:$false
-    Install-Module -Name AzureRM -AllowClobber -Confirm:$false -Verbose:$false
+    Install-Module -Name AzureRM -RequiredVersion 6.10.0 -Confirm:$false -Verbose:$false
 }
 
 Function Install-AzureSecurity {
@@ -158,7 +159,7 @@ Catch {
 
 #! Check AzureRM PowerShell Module
 Try {
-    Import-Module -Name AzureRM -MinimumVersion 6.10.0 -ErrorAction Stop -Verbose:$false | Out-Null
+    Import-Module -Name AzureRM -RequiredVersion 6.10.0 -ErrorAction Stop -Verbose:$false | Out-Null
     Write-Verbose "Importing Azure RM PowerShell Module..."
 }
 Catch {
