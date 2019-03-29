@@ -14,18 +14,19 @@ To automate the deployment of Azure Backup Server on Azure Stack, you need to ha
 - Existing Active Directory in the tenant space where you plan to deploy Azure Backup Server.
 - Exiting virtual network and at least one subnet.
 - As an Azure Stack operator, you need to download the following marketplace items:
-- Windows Server 2016 Full Image
-- PowerShell Desired State Configuration Extension
-- Microsoft Antimalware ExtensionCustom Script Extension for Windows
-- Microsoft Azure Diagnostic Extension for Windows Virtual Machines
-- Azure Performance Diagnostics
+    - Windows Server 2016 Full Image
+    - PowerShell Desired State Configuration Extension
+    - Microsoft Antimalware ExtensionCustom Script Extension for Windows
+    - Microsoft Azure Diagnostic Extension for Windows Virtual Machines
+    - Azure Performance Diagnostics
 
 ### Azure Backup Server
 
 For Azure Backup Server, you need to have the following:
 
-- Azure SubscriptionCreate Azure Recovery Services Vault
+- Azure Subscription
+- Create Azure Recovery Services Vault
 - Download the Vault Credentials File from the Vault in Azure
-- Download Azure Backup Server Version 3 setup files from here
+- Download Azure Backup Server Version 3 setup files
 
 You can find more information on how to deploy Azure Backup Server on Azure Stack here:
