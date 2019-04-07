@@ -29,4 +29,4 @@ For Azure Backup Server, you need to have the following:
 - Download the Vault Credentials File from the Vault in Azure
 - Download Azure Backup Server Version 3 setup files
 
-You can find more information on how to deploy Azure Backup Server on Azure Stack here:
+You can find more information on how to deploy Azure Backup Server on Azure Stack here: https://charbelnemnom.com/2019/04/automate-azure-backup-server-deployment-on-azurestack-azurebackup-mabs/ 
