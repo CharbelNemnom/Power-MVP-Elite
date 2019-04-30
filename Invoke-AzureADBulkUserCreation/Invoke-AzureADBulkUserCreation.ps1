@@ -14,9 +14,9 @@ Azure AD Bulk User Creation.
 .NOTES
 File Name : Invoke-AzureADBulkUserCreation.ps1
 Author    : Charbel Nemnom
-Version   : 1.4
+Version   : 1.5
 Date      : 27-February-2018
-Update    : 02-October-2018
+Update    : 30-April-2019
 Requires  : PowerShell Version 3.0 or above
 Module    : AzureAD Version 2.0.0.155 or above
 Product   : Azure Active Directory
@@ -36,9 +36,11 @@ Param(
     [Parameter(Position=0, Mandatory=$True, HelpMessage='Specify the path of the CSV file')]
     [Alias('CSVFile')]
     [string]$FilePath,
-    [Parameter(Position=1, Mandatory=$True, HelpMessage='Specify Credentials')]
+    [Parameter(Position=1, Mandatory=$false, HelpMessage='Specify Credentials')]
     [Alias('Cred')]
-    [PSCredential]$Credential
+    [PSCredential]$Credential,
+    #MFA Account for Azure AD Account
+    [Switch]$MFA
 )
 Function Install-AzureAD {
     Set-PSRepository -Name PSGallery -Installation Trusted -Verbose:$false
@@ -46,7 +48,7 @@ Function Install-AzureAD {
 }
 
 Try {
-	$CSVData = @(Import-CSV -Path $FilePath -ErrorAction Stop)
+    $CSVData = @(Import-CSV -Path $FilePath -ErrorAction Stop)
     Write-Verbose "Successfully imported entries from $FilePath"
     Write-Verbose "Total no. of entries in CSV are : $($CSVData.count)"
     } 
@@ -65,8 +67,13 @@ Catch {
     }
 
 Try {
-    Write-Verbose "Connecting to Azure AD..."
+   Write-Verbose "Connecting to Azure AD..."
+   if ($MFA) {
+   	Connect-AzureAD -ErrorAction Stop | Out-Null
+    }
+    Else {
     Connect-AzureAD -Credential $Credential -ErrorAction Stop | Out-Null
+    }
 }
 Catch {
     Write-Verbose "Cannot connect to Azure AD. Please check your credentials. Exiting!"
