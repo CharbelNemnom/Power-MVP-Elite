@@ -15,7 +15,7 @@
         },
         "fileShareName": {
             "type": "string",
-            "defaultValue": "sftpfileshare",
+            "defaultValue": "sftpfileshare01",
             "metadata": {
                 "description": "Name of file share to be created"
             }
