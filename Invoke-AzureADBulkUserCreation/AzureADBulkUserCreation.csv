@@ -1,0 +1,10 @@
+GroupNames,GivenName,Surname,DisplayName,MailNickName,UserPrincipalName,PasswordProfile,City,State,Country,Department,JobTitle,Mobile
+Development,Peter,Gibbons,Peter Gibbons,pgibbons,pgibbons@customdomain.com,P@ssw0rd,Austin,Texas,US,Software Development,Software Engineer Team Lead,123456789
+Collation,Milton,Waddams,Milton Waddams,mwaddams,mwaddams@customdomain.com,P@ssw0rd,Austin,Texas,US,Software Development,Collator,123456789
+Develoment-Managers;Leadership,Bill,Lumbergh,Bill Lumbergh,blumbergh,blumbergh@customdomain.com,P@ssw0rd,Austin,Texas,US,Software Development,Division Vice President,123456789
+Development,Michael,Bolton,Michael Bolton,mbolton,mbolton@customdomain.com,P@ssw0rd,Austin,Texas,US,Software Development,Software Engineer,123456789
+Development,Samir,Nagheenanajar,Samir Nagheenanajar,snagheenanajar,snagheenanajar@customdomain.com,P@ssw0rd,Austin,Texas,US,Software Development,Software Engineer,123456789
+Consultants,Bob,Slydell,Bob Slydell,bslydell,bslydell@customdomain.com,P@ssw0rd,Austin,Texas,US,Human Resources,Consultants,123456789
+Develoment-Managers;Leadership,Dom,Portwood,Dom Portwood,dportwood,dportwood@customdomain.com,P@ssw0rd,Austin,Texas,US,Software Development,Division Vice President,123456789
+Development;Project Manager,Tom,Smykowski,Tom Smykowski,tsmykowski,tsmykowski@customdomain.com,P@ssw0rd,Austin,Texas,US,Software Development,Project Manager,123456789
+Consultants,Bob,Porter,Bob Porter,bporter,bporter@customdomain.com,P@ssw0rd,Austin,Texas,US,Human Resources,Consultants,123456789
