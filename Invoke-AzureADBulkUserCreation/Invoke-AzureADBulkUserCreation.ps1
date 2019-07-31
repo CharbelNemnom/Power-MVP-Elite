@@ -50,9 +50,43 @@ Param(
     [Alias('2FA')]
     [Switch]$MFA
 )
+
 Function Install-AzureAD {
     Set-PSRepository -Name PSGallery -Installation Trusted -Verbose:$false
     Install-Module -Name AzureAD -AllowClobber -Verbose:$false
+}
+
+
+function Test-DomainExistsInAad {
+
+      param(
+
+             [Parameter(mandatory=$true)]
+
+             [string]$DomainName
+
+       )
+
+      $response = Invoke-WebRequest -Uri "https://login.microsoftonline.com/getuserrealm.srf?login=user@$DomainName&xml=1"
+
+     if($response -and $response.StatusCode -eq 200) {
+
+           $namespaceType = ([xml]($response.Content)).RealmInfo.NameSpaceType
+
+           if ($namespaceType -eq "Unknown")
+           {
+                return $false
+           }
+           else{
+                return $true
+           }
+
+    } else {
+
+        Write-Error -Message 'Domain could not be verified. Please check your connectivity to login.microsoftonline.com'
+
+    }
+
 }
 
 Try {
@@ -87,6 +121,8 @@ Catch {
     Write-Verbose "Cannot connect to Azure AD. Please check your credentials. Exiting!"
     Break
 }
+
+$CheckedDomains = @{}
 
 Foreach ($Entry in $CSVData) {
     # Verify that mandatory properties are defined for each object
@@ -126,6 +162,22 @@ Foreach ($Entry in $CSVData) {
         $PasswordProfile.EnforceChangePasswordPolicy = 1
         $PasswordProfile.ForceChangePasswordNextLogin = 1
     }   
+
+    #Verify that the domain is registered in AAD
+    $domain = $UserPrincipalName.SubString($UserPrincipalName.IndexOf("@") + 1)
+    $domainExists = $False
+    if (!$CheckedDomains.ContainsKey($domain))
+    {
+        $CheckedDomains.Add($domain, (Test-DomainExistsInAad($domain)))
+    }
+    $domainExists = $CheckedDomains[$domain];
+
+    if(!$domainExists)
+    {
+        Write-Warning "Domain for user $UserPrincipalName is not registered in Azure AD. Continuing to next user."
+        Continue
+    }
+
     
     #See if the user exists.
     Try{
@@ -154,11 +206,12 @@ Foreach ($Entry in $CSVData) {
                 -Country $Entry.Country `
                 -Department $Entry.Department `
                 -JobTitle $Entry.JobTitle `
-                -Mobile $Entry.Mobile | Out-Null
+                -Mobile $Entry.Mobile `
+                -UsageLocation $Entry.UsageLocation | Out-Null
                 } 
         Catch {
             Write-Error "$DisplayName : Error occurred while creating Azure AD Account. $_"
-            Break;
+            Continue
         }
 
         #Make sure the user exists now.
@@ -167,7 +220,7 @@ Foreach ($Entry in $CSVData) {
         }
         Catch{
             Write-Warning "$DisplayName : Newly created account could not be found.  Continuing to next user. $_"
-            break;
+            Continue
         }
 
         Write-Verbose "$DisplayName : AAD Account is created successfully!"     
@@ -192,7 +245,7 @@ Foreach ($Entry in $CSVData) {
                 }
                 Catch {                
                     Write-Warning "Failed to create group $GroupName. Continuing to the next group."
-                    Break;
+                    Continue
                 }
             }
 
@@ -211,7 +264,7 @@ Foreach ($Entry in $CSVData) {
                     }
                     Catch {                
                         Write-Warning "Failed to add $DisplayName to Azure AD Group $GroupName. Continuing to the next group."
-                        Break;
+                        Continue
                     }
             }
         }
