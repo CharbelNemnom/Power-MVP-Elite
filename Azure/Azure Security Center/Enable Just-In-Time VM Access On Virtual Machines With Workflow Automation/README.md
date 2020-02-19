@@ -1,8 +1,8 @@
 # Logic App Workflow Automation to remediate Just-in-Time VM Access in Azure Security Center
 
-This logic app will run only when Azure Security Center fire up a new recommendation for "Just-In-Time network access control should be applied on virtual machine" and create access policies for each VM for ports 22 and 3389.
+This logic app will run only when Azure Security Center fire up a new recommendation for "Just-In-Time network access control should be applied on virtual machine" and create access policies for each VM for ports 22 and 3389 for maximum 3 hours.
 
-You need to create a Workflow automation and select this Logic App as a action.
+You need to create a Workflow automation and select this Logic App as an action.
 For more information, please check the <a
 href="https://charbelnemnom.com/2020/02/enable-just-in-time-vm-access-on-virtual-machines-with-workflow-automation-in-azure-security-center" target="_blank">following step-by-step guide</a>.
 
