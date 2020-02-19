@@ -4,7 +4,7 @@ This logic app will run only when Azure Security Center fire up a new recommenda
 
 You need to create a Workflow automation and select this Logic App as a action.
 For more information, please check the <a
-href="https://https://charbelnemnom.com/2020/02/enable-just-in-time-vm-access-on-virtual-machines-with-workflow-automation-in-azure-security-center" target="_blank">following step-by-step guide</a>.
+href="https://charbelnemnom.com/2020/02/enable-just-in-time-vm-access-on-virtual-machines-with-workflow-automation-in-azure-security-center" target="_blank">following step-by-step guide</a>.
 
 The playbook leverages a "Managed Identity" which needs to be configured after deployment. This "Managed Identity" also requires the appropriate subscription permissions on the resources (subscriptions, tasks, and VMs) that you would like to remediate.
 
