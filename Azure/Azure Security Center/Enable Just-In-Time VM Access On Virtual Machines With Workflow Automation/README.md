@@ -8,7 +8,7 @@ href="https://charbelnemnom.com/2020/02/enable-just-in-time-vm-access-on-virtual
 
 The playbook leverages a "Managed Identity" which needs to be configured after deployment. This "Managed Identity" also requires the appropriate subscription permissions on the resources (subscriptions, tasks, and VMs) that you would like to remediate.
 
-When you deploy this template, you need to provide a playbook name (or leave the default name), you also need to provide a username that will be used for the Azure Security Center and Azure AD connections.
+When you deploy this template, you need to provide a playbook name (or leave the default name), you also need to provide a username that will be used for the Azure Security Center connection.
 
 <a
 href="https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FCharbelNemnom%2FPower-MVP-Elite%2Fmaster%2FAzure%2FAzure%20Security%20Center%2FEnable%20Just-In-Time%20VM%20Access%20On%20Virtual%20Machines%20With%20Workflow%20Automation%2FASC-WA-EnableJIT.json" target="_blank">
