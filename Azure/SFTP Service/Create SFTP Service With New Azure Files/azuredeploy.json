@@ -17,7 +17,19 @@
             "type": "string",
             "defaultValue": "sftpfileshare01",
             "metadata": {
-                "description": "Name of file share to be created"
+                "description": "Name of the file share to be created"
+            }
+        },
+         "fileShareAccessTier": {
+            "type": "string",
+            "defaultValue": "Hot",
+                "allowedValues": [
+                "Hot",
+                "Cool",
+                "TransactionOptimized"
+            ],
+            "metadata": {
+                "description": "File Share Access Tier to be created"
             }
         },
         "sftpUser": {
@@ -43,7 +55,7 @@
     "variables": {
         "cliContainerName": "create-share",
         "cliContainerGroupName": "create-share-group",
-        "cliContainerImage": "microsoft/azure-cli:latest",
+        "cliContainerImage": "mcr.microsoft.com/azure-cli:latest",
         "sftpContainerName": "sftp",
         "sftpContainerGroupName": "sftp-group",
         "sftpContainerImage": "atmoz/sftp:latest",
@@ -70,7 +82,7 @@
         {
             "type": "Microsoft.Storage/storageAccounts",
             "name": "[variables('storageAccountName')]",
-            "apiVersion": "2018-02-01",
+            "apiVersion": "2019-06-01",
             "location": "[parameters('location')]",
             "sku": {
                 "name": "[parameters('storageAccountType')]"
@@ -82,9 +94,20 @@
             }
         },
         {
+            "type": "Microsoft.Storage/storageAccounts/fileServices/shares",
+            "apiVersion": "2019-06-01",
+            "name": "[concat(variables('storageAccountName'), '/default/', parameters('fileShareName'))]",            
+             "dependsOn": [
+                "[variables('storageAccountName')]"
+            ],
+            "properties": {            
+                "accessTier": "[parameters('fileShareAccessTier')]"
+            }
+        },
+        {
             "type": "Microsoft.ContainerInstance/containerGroups",
             "name": "[variables('cliContainerGroupName')]",
-            "apiVersion": "2018-04-01",
+            "apiVersion": "2019-12-01",
             "location": "[parameters('location')]",
             "dependsOn": [
                 "[variables('storageAccountName')]"
@@ -99,14 +122,14 @@
                                 "az",
                                 "storage",
                                 "share",
-                                "create",
+                                "update",                                
                                 "--name",
-                                "[parameters('fileShareName')]"
+                                "[parameters('fileShareName')]"                                
                             ],
                             "environmentVariables": [
                                 {
                                     "name": "AZURE_STORAGE_KEY",
-                                    "value": "[listKeys(variables('storageAccountName'),'2018-02-01').keys[0].value]"
+                                    "value": "[listKeys(variables('storageAccountName'),'2019-06-01').keys[0].value]"
                                 },
                                 {
                                     "name": "AZURE_STORAGE_ACCOUNT",
@@ -129,7 +152,7 @@
         {
             "type": "Microsoft.ContainerInstance/containerGroups",
             "name": "[variables('sftpContainerGroupName')]",
-            "apiVersion": "2018-04-01",
+            "apiVersion": "2019-12-01",
             "location": "[parameters('location')]",
             "dependsOn": [
                 "[variables('cliContainerGroupName')]"
@@ -159,7 +182,7 @@
                             ],
                             "volumeMounts": [
                                 {
-                                    "mountPath": "[concat('/home/', parameters('sftpUser'), '/upload')]",
+                                    "mountPath": "[concat('/home/', parameters('sftpUser'), '/', parameters('fileShareName'))]",
                                     "name": "sftpvolume",
                                     "readOnly": false
                                 }
@@ -185,7 +208,7 @@
                             "readOnly": false,
                             "shareName": "[parameters('fileShareName')]",
                             "storageAccountName": "[variables('storageAccountName')]",
-                            "storageAccountKey": "[listKeys(variables('storageAccountName'),'2018-02-01').keys[0].value]"
+                            "storageAccountKey": "[listKeys(variables('storageAccountName'),'2019-06-01').keys[0].value]"
                         }
                     }
                 ]
