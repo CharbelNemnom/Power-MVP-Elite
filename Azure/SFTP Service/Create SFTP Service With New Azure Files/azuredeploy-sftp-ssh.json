@@ -169,7 +169,7 @@
                             "environmentVariables": [
                                 {
                                     "name": "SFTP_USERS",
-                                    "value": "[variables('sftpEnvVariable')]"
+                                    "secureValue": "[variables('sftpEnvVariable')]"
                                 }
                             ],
                             "resources": {
