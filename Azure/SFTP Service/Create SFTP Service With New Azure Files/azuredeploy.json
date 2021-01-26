@@ -96,11 +96,11 @@
         {
             "type": "Microsoft.Storage/storageAccounts/fileServices/shares",
             "apiVersion": "2019-06-01",
-            "name": "[concat(variables('storageAccountName'), '/default/', parameters('fileShareName'))]",            
+            "name": "[concat(variables('storageAccountName'), '/default/', parameters('fileShareName'))]",
              "dependsOn": [
                 "[variables('storageAccountName')]"
             ],
-            "properties": {            
+            "properties": {
                 "accessTier": "[parameters('fileShareAccessTier')]"
             }
         },
@@ -122,9 +122,9 @@
                                 "az",
                                 "storage",
                                 "share",
-                                "update",                                
+                                "update",
                                 "--name",
-                                "[parameters('fileShareName')]"                                
+                                "[parameters('fileShareName')]"
                             ],
                             "environmentVariables": [
                                 {
@@ -166,7 +166,7 @@
                             "environmentVariables": [
                                 {
                                     "name": "SFTP_USERS",
-                                    "value": "[variables('sftpEnvVariable')]"
+                                    "secureValue": "[variables('sftpEnvVariable')]"
                                 }
                             ],
                             "resources": {
