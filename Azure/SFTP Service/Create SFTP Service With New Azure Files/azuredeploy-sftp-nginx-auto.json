@@ -20,10 +20,10 @@
                 "description": "Name of the SFTP upload file share to be created"
             }
         },
-         "fileShareAccessTier": {
+        "fileShareAccessTier": {
             "type": "string",
             "defaultValue": "Hot",
-                "allowedValues": [
+            "allowedValues": [
                 "Hot",
                 "Cool",
                 "TransactionOptimized"
@@ -38,11 +38,44 @@
                 "description": "Username to use for SFTP access"
             }
         },
+        "sftpPassword": {
+            "type": "securestring",
+            "metadata": {
+                "description": "Password to use for SFTP access"
+            }
+        },
         "location": {
             "type": "string",
             "defaultValue": "[resourceGroup().location]",
             "metadata": {
                 "description": "Primary location for resources"
+            }
+        },
+        "containerGroupDNSLabel": {
+            "type": "string",
+            "defaultValue": "[uniqueString(resourceGroup().id, deployment().name)]",
+            "metadata": {
+                "description": "DNS label for container group"
+            }
+        },
+        "existingStorageAccountResourceGroupName": {
+            "type": "string",
+            "metadata": {
+                "description": "Resource group name for existing storage account where nginx config resides"
+            }
+        },
+        "existingNginxStorageAccountName": {
+            "type": "string",
+            "defaultValue": "nginxstorageaccount2021",
+            "metadata": {
+                "description": "The existing storage account name where the nginx config is uploaded to the file share"
+            }
+        },
+        "existingNginxFileShareName": {
+            "type": "string",
+            "defaultValue": "sftp-nginx-conf01",
+            "metadata": {
+                "description": "The name of the existing Azure file share where nginx config file is uploaded"
             }
         }
     },
@@ -50,9 +83,11 @@
         "sftpContainerName": "sftp",
         "sftpContainerGroupName": "sftp-group",
         "sftpContainerImage": "atmoz/sftp:latest",
-        "sftpEnvVariable": "[concat(parameters('sftpUser'), '::1001')]",
-        "sshKeyFileShareName": "[parameters('sftpUser')]",
+        "nginxContainerName": "nginx",
+        "nginxContainerImage": "nginx:latest",
+        "sftpEnvVariable": "[concat(parameters('sftpUser'), ':', parameters('sftpPassword'), ':1001')]",
         "storageAccountName": "[concat('sftpstg', uniqueString(resourceGroup().id))]",
+        "storageAccountId": "[resourceId(parameters('existingStorageAccountResourceGroupName'), 'Microsoft.Storage/storageAccounts', parameters('existingNginxStorageAccountName'))]",
         "storageKind": "StorageV2",
         "storageAccessTier": "Hot",
         "supportsHttpsTrafficOnly": true
@@ -89,19 +124,8 @@
             "type": "Microsoft.Storage/storageAccounts/fileServices/shares",
             "apiVersion": "2019-06-01",
             "name": "[concat(variables('storageAccountName'), '/default/', parameters('uploadFileShareName'))]",
-             "dependsOn": [
-                "[variables('storageAccountName')]"
-            ],
-            "properties": {
-                "accessTier": "[parameters('fileShareAccessTier')]"
-            }
-        },
-          {
-            "type": "Microsoft.Storage/storageAccounts/fileServices/shares",
-            "apiVersion": "2019-06-01",
-            "name": "[concat(variables('storageAccountName'), '/default/', variables('sshkeyFileShareName'))]",
-             "dependsOn": [
-                "[variables('storageAccountName')]"
+            "dependsOn": [
+                "[resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName'))]"
             ],
             "properties": {
                 "accessTier": "[parameters('fileShareAccessTier')]"
@@ -113,8 +137,7 @@
             "apiVersion": "2019-12-01",
             "location": "[parameters('location')]",
             "dependsOn": [
-                "[resourceId('Microsoft.Storage/storageAccounts/fileServices/shares', variables('storageAccountName'), 'default', parameters('uploadFileShareName'))]",
-                "[resourceId('Microsoft.Storage/storageAccounts/fileServices/shares', variables('storageAccountName'), 'default', variables('sshKeyFileShareName'))]"
+                "[resourceId('Microsoft.Storage/storageAccounts/fileServices/shares', variables('storageAccountName'), 'default', parameters('uploadFileShareName'))]"
             ],
             "properties": {
                 "containers": [
@@ -130,7 +153,7 @@
                             ],
                             "resources": {
                                 "requests": {
-                                    "cpu": 2,
+                                    "cpu": 1,
                                     "memoryInGB": 1
                                 }
                             },
@@ -144,10 +167,37 @@
                                     "mountPath": "[concat('/home/', parameters('sftpUser'), '/', parameters('uploadFileShareName'))]",
                                     "name": "sftpvolume",
                                     "readOnly": false
+                                }
+                            ]
+                        }
+                    },
+                    {
+                        "name": "[variables('nginxContainerName')]",
+                        "properties": {
+                            "image": "[variables('nginxContainerImage')]",
+                            "resources": {
+                                "requests": {
+                                    "cpu": 1,
+                                    "memoryInGB": 1
+                                }
+                            },
+                            "ports": [
+                                {
+                                    "port": 80
                                 },
                                 {
-                                    "mountPath": "[concat('/home/', parameters('sftpUser'), '/.ssh/keys')]",
-                                    "name": "sshkeyvolume",
+                                    "port": 2222
+                                }
+                            ],
+                            "volumeMounts": [
+                                {
+                                    "mountPath": "/etc/nginx/",
+                                    "name": "nginxconf",
+                                    "readOnly": false
+                                },
+                                {
+                                    "mountPath": "/mnt/sftp",
+                                    "name": "sftpvolume",
                                     "readOnly": true
                                 }
                             ]
@@ -160,9 +210,14 @@
                     "ports": [
                         {
                             "protocol": "TCP",
-                            "port": 22
+                            "port": 80
+                        },
+                        {
+                            "protocol": "TCP",
+                            "port": 2222
                         }
-                    ]
+                    ],
+                    "dnsNameLabel": "[parameters('containerGroupDNSLabel')]"
                 },
                 "restartPolicy": "OnFailure",
                 "volumes": [
@@ -170,18 +225,18 @@
                         "name": "sftpvolume",
                         "azureFile": {
                             "readOnly": false,
-                            "shareName": "[parameters('uploadFileShareName')]",
+                            "shareName": "[parameters('UploadFileShareName')]",
                             "storageAccountName": "[variables('storageAccountName')]",
                             "storageAccountKey": "[listKeys(variables('storageAccountName'),'2019-06-01').keys[0].value]"
                         }
                     },
                     {
-                        "name": "sshkeyvolume",
+                        "name": "nginxconf",
                         "azureFile": {
                             "readOnly": false,
-                            "shareName": "[variables('sshKeyFileShareName')]",
-                            "storageAccountName": "[variables('storageAccountName')]",
-                            "storageAccountKey": "[listKeys(variables('storageAccountName'),'2019-06-01').keys[0].value]"
+                            "shareName": "[parameters('existingNginxFileShareName')]",
+                            "storageAccountName": "[parameters('existingNginxStorageAccountName')]",
+                            "storageAccountKey": "[listKeys(variables('storageAccountId'),'2019-06-01').keys[0].value]"
                         }
                     }
                 ]
@@ -189,9 +244,9 @@
         }
     ],
     "outputs": {
-        "containerIPv4Address": {
+        "containerDNSLabel": {
             "type": "string",
-            "value": "[reference(resourceId('Microsoft.ContainerInstance/containerGroups/', variables('sftpContainerGroupName'))).ipAddress.ip]"
+            "value": "[concat(parameters('containerGroupDNSLabel'), '.', parameters('location'), '.azurecontainer.io')]"
         }
     }
 }

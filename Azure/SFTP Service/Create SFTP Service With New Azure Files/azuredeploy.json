@@ -53,9 +53,6 @@
         }
     },
     "variables": {
-        "cliContainerName": "create-share",
-        "cliContainerGroupName": "create-share-group",
-        "cliContainerImage": "mcr.microsoft.com/azure-cli:latest",
         "sftpContainerName": "sftp",
         "sftpContainerGroupName": "sftp-group",
         "sftpContainerImage": "atmoz/sftp:latest",
@@ -106,56 +103,11 @@
         },
         {
             "type": "Microsoft.ContainerInstance/containerGroups",
-            "name": "[variables('cliContainerGroupName')]",
-            "apiVersion": "2019-12-01",
-            "location": "[parameters('location')]",
-            "dependsOn": [
-                "[variables('storageAccountName')]"
-            ],
-            "properties": {
-                "containers": [
-                    {
-                        "name": "[variables('cliContainerName')]",
-                        "properties": {
-                            "image": "[variables('cliContainerImage')]",
-                            "command": [
-                                "az",
-                                "storage",
-                                "share",
-                                "update",
-                                "--name",
-                                "[parameters('fileShareName')]"
-                            ],
-                            "environmentVariables": [
-                                {
-                                    "name": "AZURE_STORAGE_KEY",
-                                    "value": "[listKeys(variables('storageAccountName'),'2019-06-01').keys[0].value]"
-                                },
-                                {
-                                    "name": "AZURE_STORAGE_ACCOUNT",
-                                    "value": "[variables('storageAccountName')]"
-                                }
-                            ],
-                            "resources": {
-                                "requests": {
-                                    "cpu": 1,
-                                    "memoryInGB": 1
-                                }
-                            }
-                        }
-                    }
-                ],
-                "restartPolicy": "OnFailure",
-                "osType": "Linux"
-            }
-        },
-        {
-            "type": "Microsoft.ContainerInstance/containerGroups",
             "name": "[variables('sftpContainerGroupName')]",
             "apiVersion": "2019-12-01",
             "location": "[parameters('location')]",
             "dependsOn": [
-                "[variables('cliContainerGroupName')]"
+                "[resourceId('Microsoft.Storage/storageAccounts/fileServices/shares', variables('storageAccountName'), 'default', parameters('fileShareName'))]"
             ],
             "properties": {
                 "containers": [
