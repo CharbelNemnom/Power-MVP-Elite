@@ -1,0 +1,145 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+         "location": {
+            "type": "string",
+            "defaultValue": "[resourceGroup().location]",
+            "metadata": {
+                "description": "Primary location for resources"
+            }
+        },
+        "containerGroupDNSLabel": {
+            "type": "string",
+            "defaultValue": "[uniqueString(resourceGroup().id, deployment().name)]",
+            "metadata": {
+                "description": "DNS label for container group"
+            }
+        },
+        "existingStorageAccountResourceGroupName": {
+            "type": "string",
+            "metadata": {
+                "description": "Resource group name for existing storage account where nginx config resides"
+            }
+        },
+        "existingNginxStorageAccountName": {
+            "type": "string",
+            "defaultValue": "nginxstorageaccount2021",
+            "metadata": {
+                "description": "The existing storage account name where the nginx config is uploaded to the file share"
+            }
+        },
+        "existingNginxFileShareName": {
+            "type": "string",
+            "defaultValue": "nginx-conf01",
+            "metadata": {
+                "description": "The name of the existing Azure file share where nginx config file is uploaded"
+            }
+        },
+         "existingFileShareName": {
+            "type": "string",
+            "defaultValue": "azure-file-share01",
+            "metadata": {
+                "description": "The name of the existing Azure file share where your upload files"
+            }
+        }
+    },
+    "variables": {
+        "ContainerGroupName": "nginx-aci-group",
+        "nginxContainerName": "nginx",
+        "nginxContainerImage": "nginx:latest",
+        "storageAccountId": "[resourceId(parameters('existingStorageAccountResourceGroupName'), 'Microsoft.Storage/storageAccounts', parameters('existingNginxStorageAccountName'))]"
+    },
+    "resources": [
+        {
+            "type": "Microsoft.Resources/deployments",
+            "name": "pid-18f281fe-d1e1-502c-8b87-d945383dc75b",
+            "apiVersion": "2015-01-01",
+            "properties": {
+                "mode": "Incremental",
+                "template": {
+                    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+                    "contentVersion": "1.0.0.0",
+                    "resources": []
+                }
+            }
+        },
+        {
+            "type": "Microsoft.ContainerInstance/containerGroups",
+            "name": "[variables('ContainerGroupName')]",
+            "apiVersion": "2019-12-01",
+            "location": "[parameters('location')]",
+            "properties": {
+                "containers": [
+                    {
+                    "name": "[variables('nginxContainerName')]",
+                    "properties": {
+                        "image": "[variables('nginxContainerImage')]",
+                        "resources": {
+                            "requests": {
+                                "cpu": 1,
+                                "memoryInGB": 1
+                            }
+                        },
+                        "ports": [
+                            {
+                                "port": 80
+                            }
+                        ],
+                            "volumeMounts": [
+                                {
+                                    "mountPath": "/etc/nginx",
+                                    "name": "nginxconf",
+                                    "readOnly": false
+                                },
+                                {
+                                    "mountPath": "/mnt/azfileshare",
+                                    "name": "filesharevolume",
+                                    "readOnly": true
+                                }
+                            ]
+                        }
+                    }
+                ],
+                "osType": "Linux",
+                "ipAddress": {
+                    "type": "Public",
+                    "ports": [
+                        {
+                            "protocol": "TCP",
+                            "port": 80
+                        }
+                    ],
+                    "dnsNameLabel": "[parameters('containerGroupDNSLabel')]"
+                },
+                "restartPolicy": "OnFailure",
+                "volumes": [
+                    {
+                        "name": "filesharevolume",
+                        "azureFile": {
+                            "readOnly": true,
+                            "shareName": "[parameters('existingFileShareName')]",
+                            "storageAccountName": "[parameters('existingNginxStorageAccountName')]",
+                            "storageAccountKey": "[listKeys(variables('storageAccountId'),'2019-06-01').keys[0].value]"
+                        }
+                    },
+                    {
+                        "name": "nginxconf",
+                        "azureFile": {
+                            "readOnly": false,
+                            "shareName": "[parameters('existingNginxFileShareName')]",
+                            "storageAccountName": "[parameters('existingNginxStorageAccountName')]",
+                            "storageAccountKey": "[listKeys(variables('storageAccountId'),'2019-06-01').keys[0].value]"
+                        }
+                    }
+                ]
+            }
+        }
+    ],
+    "outputs": {
+        "containerDNSLabel": {
+            "type": "string",
+            "value": "[concat(parameters('containerGroupDNSLabel'), '.', parameters('location'), '.azurecontainer.io')]"
+        }
+    }
+}
