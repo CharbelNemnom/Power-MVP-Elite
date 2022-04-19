@@ -11,7 +11,7 @@
         "existingStorageAccountName": {
             "type": "string",
             "metadata": {
-                "description": "Name of existing Azure storage account"
+                "description": "Name of your existing Azure storage account"
             }
         },
         "existingFileShareName": {
