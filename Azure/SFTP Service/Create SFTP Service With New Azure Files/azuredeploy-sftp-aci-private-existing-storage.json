@@ -1,0 +1,222 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "existingStorageAccountResourceGroupName": {
+            "type": "string",
+            "metadata": {
+                "description": "Resource group for existing storage account"
+            }
+        },
+        "existingStorageAccountName": {
+            "type": "string",
+            "metadata": {
+                "description": "Name of existing Azure storage account"
+            }
+        },
+        "existingFileShareName": {
+            "type": "string",
+            "metadata": {
+                "description": "Name of existing Azure file share to be used for SFTP"
+            }
+        },
+        "existingVNETName": {
+            "type": "string",
+            "defaultValue": "avn-weu-spoke-prd01",
+            "metadata": {
+                "description": "Name of existing Virtual Network"
+            }
+        },
+        "existingResourceGroupNameVNET": {
+            "type": "string",
+            "defaultValue": "arg-weu-network-prd01",
+            "metadata": {
+                "description": "Name of existing Resource Group Name for the Virtual Network"
+            }
+        },
+        "newSubnetName": {
+            "type": "string",
+            "defaultValue": "vsn-weu-container-prd01",
+            "metadata": {
+                "description": "Enter the new subnet name for the Azure Container Instances"
+            }
+        },
+        "newSubnetAddressPrefix": {
+            "type": "string",
+            "defaultValue": "10.71.11.0/24",
+            "metadata": {
+                "description": "Enter the new private Subnet prefix for the Container Instances"
+            }
+        },
+        "sftpUser": {
+            "type": "string",
+            "metadata": {
+                "description": "Username to use for SFTP access"
+            }
+        },
+        "sftpPassword": {
+            "type": "securestring",
+            "metadata": {
+                "description": "Password to use for SFTP access"
+            }
+        },
+        "location": {
+            "type": "string",
+            "defaultValue": "[resourceGroup().location]",
+            "metadata": {
+                "description": "Primary location for resources"
+            }
+        },
+        "containerGroupDNSLabel": {
+            "type": "string",
+            "defaultValue": "[uniqueString(resourceGroup().id, deployment().name)]",
+            "metadata": {
+                "description": "DNS label for container group"
+            }
+        }
+    },
+    "variables": {
+        "sftpContainerName": "sftp-weu-prd01",
+        "sftpContainerGroupName": "aci-weu-sftp-prd01",
+        "sftpContainerImage": "atmoz/sftp:latest",
+        "NetworkProfileName": "aci-sftp-networkProfile",
+        "interfaceConfigName": "aci-nic01",
+        "interfaceIpConfig": "ipconfigprofile01",
+        "subnetResourceId": "[resourceId(parameters('existingResourceGroupNameVNET'), 'Microsoft.Network/virtualNetworks/subnets', parameters('existingVNETName'), parameters('newSubnetName'))]",
+        "sftpEnvVariable": "[concat(parameters('sftpUser'), ':', parameters('sftpPassword'), ':1001')]",
+        "storageAccountId": "[resourceId(parameters('existingStorageAccountResourceGroupName'), 'Microsoft.Storage/storageAccounts', parameters('existingStorageAccountName'))]"
+    },
+    "resources": [
+        {
+            "type": "Microsoft.Resources/deployments",
+            "apiVersion": "2019-10-01",
+            "name": "nestedTemplate",
+            "resourceGroup": "[parameters('existingResourceGroupNameVNET')]",
+            "properties": {
+                "mode": "Incremental",
+                "template": {
+                    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+                    "contentVersion": "1.0.0.0",
+                    "resources": [
+                        {
+                            "comments": "Create a new subnet in existing Virtual Network for VNET integration for the Azure Container Instances",
+                            "type": "Microsoft.Network/virtualNetworks/subnets",
+                            "apiVersion": "2020-05-01",
+                            "name": "[concat(parameters('existingVNETName'), '/', parameters('newSubnetName'))]",
+                            "location": "[resourceGroup().location]",
+                            "properties": {
+                                "addressPrefix": "[parameters('newSubnetAddressPrefix')]",
+                                "delegations": [
+                                    {
+                                        "name": "DelegationService",
+                                        "properties": {
+                                            "serviceName": "Microsoft.ContainerInstance/containerGroups"
+                                        }
+                                    }
+                                ]
+                            }
+
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            "type": "Microsoft.Network/networkProfiles",
+            "name": "[variables('NetworkProfileName')]",
+            "apiVersion": "2020-05-01",
+            "location": "[parameters('location')]",
+            "dependsOn": [
+                "nestedTemplate"
+            ],
+            "properties": {
+                "containerNetworkInterfaceConfigurations": [
+                    {
+                        "name": "[variables('interfaceConfigName')]",
+                        "properties": {
+                            "ipConfigurations": [
+                                {
+                                    "name": "[variables('interfaceIpConfig')]",
+                                    "properties": {
+                                        "subnet": {
+                                            "id": "[variables('subnetResourceId')]"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "type": "Microsoft.ContainerInstance/containerGroups",
+            "name": "[variables('sftpContainerGroupName')]",
+            "apiVersion": "2019-12-01",
+            "location": "[parameters('location')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/networkProfiles', variables('NetworkProfileName'))]"
+            ],
+            "properties": {
+                "containers": [
+                    {
+                        "name": "[variables('sftpContainerName')]",
+                        "properties": {
+                            "image": "[variables('sftpContainerImage')]",
+                            "environmentVariables": [
+                                {
+                                    "name": "SFTP_USERS",
+                                    "secureValue": "[variables('sftpEnvVariable')]"
+                                }
+                            ],
+                            "resources": {
+                                "requests": {
+                                    "cpu": 2,
+                                    "memoryInGB": 1
+                                }
+                            },
+                            "ports": [
+                                {
+                                    "port": 22
+                                }
+                            ],
+                            "volumeMounts": [
+                                {
+                                    "mountPath": "[concat('/home/', parameters('sftpUser'), '/', parameters('existingFileShareName'))]",
+                                    "name": "sftpvolume",
+                                    "readOnly": false
+                                }
+                            ]
+                        }
+                    }
+                ],
+                "osType": "Linux",
+                "networkProfile": {
+                    "id": "[resourceId('Microsoft.Network/networkProfiles', variables('networkProfileName'))]"
+                },
+                "restartPolicy": "OnFailure",
+                "volumes": [
+                    {
+                        "name": "sftpvolume",
+                        "azureFile": {
+                            "readOnly": false,
+                            "shareName": "[parameters('existingFileShareName')]",
+                            "storageAccountName": "[parameters('existingStorageAccountName')]",
+                            "storageAccountKey": "[listKeys(variables('storageAccountId'),'2019-06-01').keys[0].value]"
+                        }
+                    }
+                ]
+            }
+        }
+    ],
+    "outputs": {
+        "containerIPv4Address": {
+            "type": "string",
+            "value": "[reference(resourceId('Microsoft.ContainerInstance/containerGroups/', variables('sftpContainerGroupName'))).ipAddress.ip]"
+        },
+        "containerDNSLabel": {
+            "type": "string",
+            "value": "[concat(parameters('containerGroupDNSLabel'), '.', parameters('location'), '.azurecontainer.io')]"
+        }
+    }
+}
