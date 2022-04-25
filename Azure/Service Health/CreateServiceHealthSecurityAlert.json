@@ -21,7 +21,7 @@
         {
             "comments": "Action Group",
             "type": "microsoft.insights/actionGroups",
-            "apiVersion": "2019-06-01",
+            "apiVersion": "2021-09-01",
             "name": "[parameters('actionGroups_name')]",
             "location": "Global",
             "scale": null,
