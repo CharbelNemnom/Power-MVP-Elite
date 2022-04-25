@@ -1,0 +1,93 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "actionGroups_name": {
+            "type": "String",
+            "defaultValue": "SecurityRule"
+        },
+        "activityLogAlerts_name": {
+            "type": "String",
+            "defaultValue": "Service Health Security Alert"
+        },
+        "emailAddress": {
+            "type": "string"
+        }
+    },
+    "variables": {
+        "alertScope": "[concat('/','subscriptions','/',subscription().subscriptionId)]"
+    },
+    "resources": [
+        {
+            "comments": "Action Group",
+            "type": "microsoft.insights/actionGroups",
+            "apiVersion": "2019-06-01",
+            "name": "[parameters('actionGroups_name')]",
+            "location": "Global",
+            "scale": null,
+            "dependsOn": [],
+            "tags": {},
+            "properties": {
+                "groupShortName": "[parameters('actionGroups_name')]",
+                "enabled": true,
+                "emailReceivers": [
+                    {
+                        "name": "[parameters('actionGroups_name')]",
+                        "emailAddress": "[parameters('emailAddress')]"
+                    }
+                ],
+                "smsReceivers": [],
+                "webhookReceivers": []
+            }
+        },
+        {
+            "comments": "Service Health Activity Log Alert",
+            "type": "microsoft.insights/activityLogAlerts",
+            "apiVersion": "2020-10-01",
+            "name": "[parameters('activityLogAlerts_name')]",
+            "location": "Global",
+            "scale": null,
+            "dependsOn": [
+                "[resourceId('microsoft.insights/actionGroups', parameters('actionGroups_name'))]"
+            ],
+            "tags": {},
+            "properties": {
+                "scopes": [
+                    "[variables('alertScope')]"
+                ],
+                "condition": {
+                    "allOf": [
+                        {
+                            "field": "category",
+                            "equals": "ServiceHealth"
+                        },
+                        {
+                            "anyOf": [
+                                {
+                                    "field": "properties.incidentType",
+                                    "equals": "Security"
+                                }
+                            ]
+                        },
+                        {
+                            "field": "properties.impactedServices[*].ImpactedRegions[*].RegionName",
+                            "containsAny": [
+                                "Global"
+                            ]
+                        }
+                    ]
+                },
+                "actions": {
+                    "actionGroups": [
+                        {
+                            "actionGroupId": "[resourceId('microsoft.insights/actionGroups', parameters('actionGroups_name'))]",
+                            "webhookProperties": {}
+                        }
+                    ]
+                },
+                "enabled": true,
+                "description": "Service Health Security Advisory Alert!"
+            }
+        }
+    ]
+}
