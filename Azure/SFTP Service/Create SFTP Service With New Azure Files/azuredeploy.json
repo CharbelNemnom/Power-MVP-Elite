@@ -14,11 +14,18 @@
                 "description": "Storage account type"
             }
         },
-        "fileShareName": {
+        "fileShareName1": {
             "type": "string",
             "defaultValue": "sftpfileshare01",
             "metadata": {
-                "description": "Name of the file share to be created"
+                "description": "Name of the first file share to be created"
+            }
+        },
+        "fileShareName2": {
+            "type": "string",
+            "defaultValue": "sftpfileshare02",
+            "metadata": {
+                "description": "Name of the second file share to be created"
             }
         },
          "fileShareAccessTier": {
@@ -33,16 +40,28 @@
                 "description": "File Share Access Tier to be created"
             }
         },
-        "sftpUser": {
+        "sftpUser1": {
             "type": "string",
             "metadata": {
-                "description": "Username to use for SFTP access"
+                "description": "First username to use for SFTP"
             }
         },
-        "sftpPassword": {
+        "sftpPassword1": {
             "type": "securestring",
             "metadata": {
-                "description": "Password to use for SFTP access"
+                "description": "Password for the first user to use for SFTP access"
+            }
+        },
+         "sftpUser2": {
+            "type": "string",
+            "metadata": {
+                "description": "Second username to use for SFTP"
+            }
+        },
+        "sftpPassword2": {
+            "type": "securestring",
+            "metadata": {
+                "description": "Password for the second user to use for SFTP access"
             }
         },
         "location": {
@@ -51,32 +70,26 @@
             "metadata": {
                 "description": "Primary location for resources"
             }
+        },
+        "containerGroupDNSLabel": {
+            "type": "string",
+            "defaultValue": "az-sftp",
+            "metadata": {
+                "description": "DNS label for container group"
+            }
         }
     },
     "variables": {
         "sftpContainerName": "sftp",
         "sftpContainerGroupName": "sftp-group",
         "sftpContainerImage": "atmoz/sftp:latest",
-        "sftpEnvVariable": "[concat(parameters('sftpUser'), ':', parameters('sftpPassword'), ':1001')]",
+        "sftpEnvVariable": "[concat(parameters('sftpUser1'), ':', parameters('sftpPassword1'), ' ', parameters('sftpUser2'), ':', parameters('sftpPassword2') )]",
         "storageAccountName": "[concat('sftpstg', uniqueString(resourceGroup().id))]",
         "storageKind": "StorageV2",
         "storageAccessTier": "Hot",
         "supportsHttpsTrafficOnly": true
     },
     "resources": [
-        {
-            "type": "Microsoft.Resources/deployments",
-            "name": "pid-18f281fe-d1e1-502c-8b87-d945383dc75b",
-            "apiVersion": "2015-01-01",
-            "properties": {
-                "mode": "Incremental",
-                "template": {
-                    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
-                    "contentVersion": "1.0.0.0",
-                    "resources": []
-                }
-            }
-        },
         {
             "type": "Microsoft.Storage/storageAccounts",
             "name": "[variables('storageAccountName')]",
@@ -94,7 +107,18 @@
         {
             "type": "Microsoft.Storage/storageAccounts/fileServices/shares",
             "apiVersion": "2019-06-01",
-            "name": "[concat(variables('storageAccountName'), '/default/', parameters('fileShareName'))]",
+            "name": "[concat(variables('storageAccountName'), '/default/', parameters('fileShareName1'))]",
+             "dependsOn": [
+                "[variables('storageAccountName')]"
+            ],
+            "properties": {
+                "accessTier": "[parameters('fileShareAccessTier')]"
+            }
+        },
+         {
+            "type": "Microsoft.Storage/storageAccounts/fileServices/shares",
+            "apiVersion": "2019-06-01",
+            "name": "[concat(variables('storageAccountName'), '/default/', parameters('fileShareName2'))]",
              "dependsOn": [
                 "[variables('storageAccountName')]"
             ],
@@ -108,7 +132,8 @@
             "apiVersion": "2019-12-01",
             "location": "[parameters('location')]",
             "dependsOn": [
-                "[resourceId('Microsoft.Storage/storageAccounts/fileServices/shares', variables('storageAccountName'), 'default', parameters('fileShareName'))]"
+                "[resourceId('Microsoft.Storage/storageAccounts/fileServices/shares', variables('storageAccountName'), 'default', parameters('fileShareName1'))]",
+                "[resourceId('Microsoft.Storage/storageAccounts/fileServices/shares', variables('storageAccountName'), 'default', parameters('fileShareName2'))]"
             ],
             "properties": {
                 "containers": [
@@ -135,8 +160,13 @@
                             ],
                             "volumeMounts": [
                                 {
-                                    "mountPath": "[concat('/home/', parameters('sftpUser'), '/', parameters('fileShareName'))]",
-                                    "name": "sftpvolume",
+                                    "mountPath": "[concat('/home/', parameters('sftpUser1'), '/', parameters('fileShareName1'))]",
+                                    "name": "[parameters('fileShareName1')]",
+                                    "readOnly": false
+                                },
+                                {
+                                    "mountPath": "[concat('/home/', parameters('sftpUser2'), '/', parameters('fileShareName2'))]",
+                                    "name": "[parameters('fileShareName2')]",
                                     "readOnly": false
                                 }
                             ]
@@ -151,15 +181,25 @@
                             "protocol": "TCP",
                             "port": 22
                         }
-                    ]
+                    ],                    
+                    "dnsNameLabel": "[parameters('containerGroupDNSLabel')]"
                 },
                 "restartPolicy": "OnFailure",
                 "volumes": [
                     {
-                        "name": "sftpvolume",
+                        "name": "[parameters('fileShareName1')]",
                         "azureFile": {
                             "readOnly": false,
-                            "shareName": "[parameters('fileShareName')]",
+                            "shareName": "[parameters('fileShareName1')]",
+                            "storageAccountName": "[variables('storageAccountName')]",
+                            "storageAccountKey": "[listKeys(variables('storageAccountName'),'2019-06-01').keys[0].value]"
+                        }
+                    },
+                    {
+                        "name": "[parameters('fileShareName2')]",
+                        "azureFile": {
+                            "readOnly": false,
+                            "shareName": "[parameters('fileShareName2')]",
                             "storageAccountName": "[variables('storageAccountName')]",
                             "storageAccountKey": "[listKeys(variables('storageAccountName'),'2019-06-01').keys[0].value]"
                         }
@@ -172,6 +212,10 @@
         "containerIPv4Address": {
             "type": "string",
             "value": "[reference(resourceId('Microsoft.ContainerInstance/containerGroups/', variables('sftpContainerGroupName'))).ipAddress.ip]"
+        },
+        "containerDNSLabel": {
+            "type": "string",
+            "value": "[concat(parameters('containerGroupDNSLabel'), '.', parameters('location'), '.azurecontainer.io')]"
         }
     }
 }
