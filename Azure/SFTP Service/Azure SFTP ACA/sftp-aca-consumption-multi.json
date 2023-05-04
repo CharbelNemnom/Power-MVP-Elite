@@ -1,0 +1,334 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "storageAccountPrefix": {
+      "type": "string",
+      "metadata": {
+        "description": "Storage account prefix name"
+      }
+    },
+    "storageAccountType": {
+      "type": "string",
+      "defaultValue": "Standard_LRS",
+      "allowedValues": [
+        "Standard_LRS",
+        "Standard_GRS",
+        "Premium_LRS"
+      ],
+      "metadata": {
+        "description": "Storage account type"
+      }
+    },
+    "sftpFileShareName01": {
+      "type": "string",
+      "defaultValue": "sftpfileshare01",
+      "metadata": {
+        "description": "Name of the first file share to be created"
+      }
+    },
+    "sftpFileShareName02": {
+      "type": "string",
+      "defaultValue": "sftpfileshare02",
+      "metadata": {
+        "description": "Name of the second file share to be created"
+      }
+    },
+    "fileShareAccessTier": {
+      "type": "string",
+      "defaultValue": "Hot",
+      "allowedValues": [
+        "Hot",
+        "Cool",
+        "TransactionOptimized"
+      ],
+      "metadata": {
+        "description": "File Share Access Tier to be created"
+      }
+    },
+    "vNetName": {
+      "type": "string",
+      "defaultValue": "vnet-aca-sftp",
+      "metadata": {
+        "description": "Virtual Network Name for SFTP Container App to be created"
+      }
+    },
+    "vNetAddressPrefix": {
+      "type": "string",
+      "defaultValue": "10.1.0.0/16",
+      "metadata": {
+        "description": "Virtual Network Address Space for SFTP Container App to be created"
+      }
+    },
+    "acaSubnetName": {
+      "type": "string",
+      "defaultValue": "vsn-aca-subnet",
+      "metadata": {
+        "description": "Virtual Subnet Name for SFTP Container App to be created"
+      }
+    },
+    "acaSubnetPrefix": {
+      "type": "string",
+      "defaultValue": "10.1.0.0/23",
+      "metadata": {
+        "description": "Subnet range for SFTP Container App to be created. The provided subnet must have a size of at least /23 for consumption architecture"
+      }
+    },
+    "containerEnvName": {
+      "type": "string",
+      "defaultValue": "sftp-aca-env",
+      "metadata": {
+        "description": "Container Apps Environment Name to be created"
+      }
+    },
+    "containerAppName": {
+      "type": "string",
+      "defaultValue": "sftp-aca-app",
+      "metadata": {
+        "description": "Container App Name to be created"
+      }
+    },
+    "minReplica": {
+      "type": "int",
+      "minValue": 0,
+      "maxValue": 1,
+      "defaultValue": 1,
+      "metadata": {
+        "description": "Set the minimum number of replicas for SFTP Container Apps (0-1 min)"
+      }
+    },
+    "maxReplica": {
+      "type": "int",
+      "minValue": 2,
+      "maxValue": 30,
+      "defaultValue": 2,
+      "metadata": {
+        "description": "Set the maximum number of replicas for SFTP Container Apps (2-30 max)"
+      }
+    },
+    "sftpUser1": {
+      "type": "string",
+      "metadata": {
+        "description": "First username to use for SFTP"
+      }
+    },
+    "sftpPassword1": {
+      "type": "securestring",
+      "metadata": {
+        "description": "Password for the first user to use for SFTP access"
+      }
+    },
+    "sftpUser2": {
+      "type": "string",
+      "metadata": {
+        "description": "Second username to use for SFTP"
+      }
+    },
+    "sftpPassword2": {
+      "type": "securestring",
+      "metadata": {
+        "description": "Password for the second user to use for SFTP access"
+      }
+    },
+    "location": {
+      "type": "string",
+      "defaultValue": "[resourceGroup().location]",
+      "metadata": {
+        "description": "Primary location for resources"
+      }
+    }
+  },
+  "variables": {
+    "sftpContainerName": "sftp-aca",
+    "sftpContainerImage": "atmoz/sftp:latest",
+    "sftpEnvVariableUsers": "[concat(parameters('sftpUser1'), ':', parameters('sftpPassword1'), ' ', parameters('sftpUser2'), ':', parameters('sftpPassword2') )]",
+    "storageAccountName": "[format('{0}{1}', toLower(parameters('storageAccountPrefix')), uniqueString(resourceGroup().id))]",
+    "supportsHttpsTrafficOnly": true
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Storage/storageAccounts",
+      "apiVersion": "2019-06-01",
+      "name": "[variables('storageAccountName')]",
+      "location": "[parameters('location')]",
+      "kind": "StorageV2",
+      "sku": {
+        "name": "[parameters('storageAccountType')]"
+      },
+      "properties": {
+        "supportsHttpsTrafficOnly": "[variables('supportsHttpsTrafficOnly')]"
+      }
+    },
+    {
+      "type": "Microsoft.Storage/storageAccounts/fileServices/shares",
+      "apiVersion": "2019-06-01",
+      "name": "[toLower(format('{0}/default/{1}', variables('storageAccountName'), parameters('sftpFileShareName01')))]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName'))]"
+      ],
+      "properties": {
+        "accessTier": "[parameters('fileShareAccessTier')]"
+      }
+    },
+    {
+      "type": "Microsoft.Storage/storageAccounts/fileServices/shares",
+      "apiVersion": "2019-06-01",
+      "name": "[toLower(format('{0}/default/{1}', variables('storageAccountName'), parameters('sftpFileShareName02')))]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName'))]"
+      ],
+      "properties": {
+        "accessTier": "[parameters('fileShareAccessTier')]"
+      }
+    },
+    {
+      "type": "Microsoft.Network/virtualNetworks",
+      "apiVersion": "2022-09-01",
+      "name": "[parameters('vNetName')]",
+      "location": "[parameters('location')]",
+      "properties": {
+        "addressSpace": {
+          "addressPrefixes": [
+            "[parameters('vNetAddressPrefix')]"
+          ]
+        },
+        "subnets": [
+          {
+            "name": "[parameters('acaSubnetName')]",
+            "properties": {
+              "addressPrefix": "[parameters('acaSubnetPrefix')]"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "Microsoft.App/managedEnvironments",
+      "apiVersion": "2022-03-01",
+      "name": "[parameters('containerEnvName')]",
+      "location": "[parameters('location')]",
+      "properties": {
+        "vnetConfiguration": {
+          "infrastructureSubnetId": "[reference(resourceId('Microsoft.Network/virtualNetworks', parameters('vNetName')), '2022-09-01').subnets[0].id]",
+          "internal": false
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/virtualNetworks', parameters('vNetName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.App/managedEnvironments/storages",
+      "apiVersion": "2022-10-01",
+      "name": "[format('{0}/{1}', parameters('containerEnvName'), format('{0}-storage1', variables('sftpContainerName')))]",
+      "properties": {
+        "azureFile": {
+          "accountName": "[variables('storageAccountName')]",
+          "accountKey": "[listKeys(resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName')), '2019-06-01').keys[0].value]",
+          "shareName": "[parameters('sftpFileShareName01')]",
+          "accessMode": "ReadWrite"
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.App/managedEnvironments', parameters('containerEnvName'))]",
+        "[resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.App/managedEnvironments/storages",
+      "apiVersion": "2022-10-01",
+      "name": "[format('{0}/{1}', parameters('containerEnvName'), format('{0}-storage2', variables('sftpContainerName')))]",
+      "properties": {
+        "azureFile": {
+          "accountName": "[variables('storageAccountName')]",
+          "accountKey": "[listKeys(resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName')), '2019-06-01').keys[0].value]",
+          "shareName": "[parameters('sftpFileShareName02')]",
+          "accessMode": "ReadWrite"
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.App/managedEnvironments', parameters('containerEnvName'))]",
+        "[resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.App/containerApps",
+      "apiVersion": "2022-10-01",
+      "name": "[parameters('containerAppName')]",
+      "location": "[parameters('location')]",
+      "properties": {
+        "managedEnvironmentId": "[resourceId('Microsoft.App/managedEnvironments', parameters('containerEnvName'))]",
+        "configuration": {
+          "secrets": [
+            {
+              "name": "sftpenvvariableusers",
+              "value": "[variables('sftpEnvVariableUsers')]"
+            }
+          ],
+          "ingress": {
+            "external": true,
+            "targetPort": 22,
+            "exposedPort": 22,
+            "traffic": [
+              {
+                "latestRevision": true,
+                "weight": 100
+              }
+            ],
+            "transport": "tcp"
+          }
+        },
+        "template": {
+          "revisionSuffix": "firstrevision",
+          "containers": [
+            {
+              "name": "[variables('sftpContainerName')]",
+              "image": "[variables('sftpContainerImage')]",
+              "env": [
+                {
+                  "name": "SFTP_USERS",
+                  "secretRef": "sftpenvvariableusers"
+                }
+              ],
+              "resources": {
+                "cpu": "[json('0.5')]",
+                "memory": "1Gi"
+              },
+              "volumeMounts": [
+                {
+                  "mountPath": "[format('/home/{0}/{1}', parameters('sftpUser1'), parameters('sftpFileShareName01'))]",
+                  "volumeName": "[parameters('sftpFileShareName01')]"
+                },
+                {
+                  "mountPath": "[format('/home/{0}/{1}', parameters('sftpUser2'), parameters('sftpFileShareName02'))]",
+                  "volumeName": "[parameters('sftpFileShareName02')]"
+                }
+              ]
+            }
+          ],
+          "scale": {
+            "minReplicas": "[parameters('minReplica')]",
+            "maxReplicas": "[parameters('maxReplica')]"
+          },
+          "volumes": [
+            {
+              "name": "[parameters('sftpFileShareName01')]",
+              "storageType": "AzureFile",
+              "storageName": "[format('{0}-storage1', variables('sftpContainerName'))]"
+            },
+            {
+              "name": "[parameters('sftpFileShareName02')]",
+              "storageType": "AzureFile",
+              "storageName": "[format('{0}-storage2', variables('sftpContainerName'))]"
+            }
+          ]
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.App/managedEnvironments', parameters('containerEnvName'))]",
+        "[resourceId('Microsoft.App/managedEnvironments/storages', parameters('containerEnvName'), format('{0}-storage1', variables('sftpContainerName')))]",
+        "[resourceId('Microsoft.App/managedEnvironments/storages', parameters('containerEnvName'), format('{0}-storage2', variables('sftpContainerName')))]"
+      ]
+    }
+  ]
+}
