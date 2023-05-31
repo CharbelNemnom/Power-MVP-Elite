@@ -1,32 +1,38 @@
-name: MSDO windows-latest
-  on:
+name: MDFC DevOps Sec IaC Scan
+
+on:
+  # Triggers the workflow on push or pull request events but only for the main branch
   push:
-  branches: [ main ]
-  pull_request:  
+    branches: [ main ]
+    
+  pull_request:
+    branches: [ main ]
+
   workflow_dispatch:
 
-  jobs:
-  sample:
-
-  # MSDO runs on windows-latest and ubuntu-latest.
-  # macos-latest supporting coming soon
-  runs-on: windows-latest
-
-  steps:
+jobs:
+  security:
+    runs-on: windows-latest
+    continue-on-error: false
+    strategy:
+      fail-fast: true
+      
+    steps:
     - uses: actions/checkout@v3
-
+    
     - uses: actions/setup-dotnet@v3
       with:
-      dotnet-version: |
-       5.0.x
-       6.0.x
-  
-    # Run analyzers
-    - name: Run Microsoft Security DevOps Analysis
+        dotnet-version: |
+          5.0.x
+          6.0.x
+          
+    - name: Run Microsoft Security DevOps
       uses: microsoft/security-devops-action@preview
+      continue-on-error: false
       id: msdo
+      with:
+        categories: 'IaC'
 
-    # Upload alerts to the Security tab
     - name: Upload alerts to Security tab
       uses: github/codeql-action/upload-sarif@v2
       with:
