@@ -27,7 +27,7 @@ jobs:
           6.0.x
           
     - name: Run Microsoft Security DevOps
-      uses: microsoft/security-devops-action@preview
+      uses: microsoft/security-devops-action@v1.6.0
       continue-on-error: false
       id: msdo
       with:
