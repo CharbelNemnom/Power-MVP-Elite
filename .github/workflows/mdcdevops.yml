@@ -27,11 +27,9 @@ jobs:
           6.0.x
           
     - name: Run Microsoft Security DevOps
-      uses: microsoft/security-devops-action@v1.6.0
+      uses: microsoft/security-devops-action@preview
       continue-on-error: false
-      id: msdo
-      with:
-        categories: 'IaC'
+      id: msdo      
 
     - name: Upload alerts to Security tab
       uses: github/codeql-action/upload-sarif@v2
