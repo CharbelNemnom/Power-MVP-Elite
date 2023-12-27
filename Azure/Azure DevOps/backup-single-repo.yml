@@ -1,0 +1,42 @@
+# Starter pipeline
+# Start with a minimal pipeline that you can customize to build and deploy your code.
+# Add steps that build, run tests, deploy, and more:
+# https://aka.ms/yaml
+# Date: 24-July-2023
+# Update: 24-August-2023
+
+trigger:
+  branches:
+    include:
+    - '*'
+
+pool:
+  vmImage: 'windows-latest'
+
+variables: 
+ backup_date: $[format('{0:yyyy}-{0:MM}-{0:dd}T{0:HH}-{0:mm}-{0:ss}', pipeline.startTime)]
+
+steps:
+  - task: CmdLine@2
+  - bash: 'git clone --mirror https://${SYSTEM_ACCESSTOKEN}@dev.azure.com/{yourOrganizationName}/{yourProjectName}/_git/{yourRepoName}'      
+    env:
+      SYSTEM_ACCESSTOKEN: $(System.AccessToken)
+
+  - task: ArchiveFiles@2
+    displayName: 'Building archive file locally'
+    inputs:
+      rootFolderOrFile: '$(System.DefaultWorkingDirectory)'
+      includeRootFolder: true
+      archiveType: 'zip'
+      archiveFile: '$(Build.ArtifactStagingDirectory)/$(backup_date)_AzDevOpsBackup.zip'
+      replaceExistingArchive: true
+
+  - task: AzureFileCopy@3
+    displayName: 'Azure Blob File Copy'
+    inputs:
+      SourcePath: '$(Build.ArtifactStagingDirectory)/$(backup_date)_AzDevOpsBackup.zip'
+      azureSubscription: 'AzDevOps-Bkp-Svc'
+      Destination: 'AzureBlob'
+      storage: 'storageaccountnamehere'
+      ContainerName: 'azure-devops-container'
+      BlobPrefix: 'az-devops-backup'

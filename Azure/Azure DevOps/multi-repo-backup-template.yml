@@ -1,0 +1,176 @@
+parameters:
+  - name: serviceConnectionName
+    displayName: 'Service Connection Name'  
+  - name: storageAccountName
+    displayName: 'Storage account Name'    
+  - name: backupContainerName
+    displayName: 'Container name in storage account'    
+  - name: blobDirectoryName
+    displayName: 'Blob Directory Name' 
+  - name: envName
+    displayName: 'Environment'
+    type: string
+    default: 'DevOps Backup'
+
+  - name: backupSourceCode
+    displayName: 'Backup Azure DevOps Source Code'
+    type: boolean
+    default: true
+  - name: repositories
+    displayName: Repositories to backup (use "git://ProjectName/RepoName" for other repos)
+    type: object
+    default:
+       - self
+       #- "git://ProjectName/RepoName"
+  
+  - name: backupVariableGroups
+    displayName: 'Backup Azure DevOps Variable Groups'
+    type: boolean
+    default: true
+  - name: devOpsOrgUrl
+    displayName: 'DevOps Organization URL'
+    type: string
+    default: ' '
+
+  - name: backupArtifacts
+    displayName: 'Backup Azure DevOps Artifacts'
+    type: boolean
+    default: false
+  - name: feedPath
+    displayName: 'Feed path'
+    type: string
+    default: ' '
+  - name: packageName
+    displayName: 'Package name in feed'
+    type: string
+    default: ' '
+  - name: packageVersion
+    displayName: 'Package version (usually from naming)'
+    type: string
+    default: ' '
+
+jobs:
+  - ${{ if eq(parameters.backupVariableGroups, true) }}:
+    - deployment: backupVariableGroup
+      variables:
+      - name: backupDateTime
+        value: $[format('{0:yyyy}-{0:MM}-{0:dd}T{0:HH}-{0:mm}-{0:ss}', pipeline.startTime)]
+      - ${{ if eq(parameters.devOpsOrgUrl, ' ') }}:
+        - name: actualDevOpsUrl
+          value: ${{ variables['System.TeamFoundationCollectionUri'] }}
+      displayName: Backup Variable Group
+      environment: ${{ parameters.envName }}
+      strategy:
+        runOnce:
+          deploy:
+            steps:
+              # Source github: https://github.com/valtynikov/azure-devops-variable-groups-backup
+              # Getting access token for the Repo
+              - checkout: self
+                persistCredentials: true
+                clean: true
+              # You don't need to use az devops login in case of using AZURE_DEVOPS_EXT_PAT env variable
+              # Proof: https://learn.microsoft.com/en-us/azure/devops/cli/log-in-via-pat?view=azure-devops&tabs=windows
+              - script: az devops configure --defaults organization=$(actualDevOpsUrl) project="$(System.TeamProject)" 
+                displayName: 'Set default Azure DevOps organization and project'
+                env:
+                  AZURE_DEVOPS_EXT_PAT: $(System.AccessToken)
+
+              - script: az pipelines variable-group list
+                displayName: 'Test Az pipelines command'
+                env:
+                  AZURE_DEVOPS_EXT_PAT: $(System.AccessToken)
+              
+              - pwsh: |
+                  $backupFolder = New-item (Join-Path "backup" "$(backupDateTime)")  -ItemType Directory -Force
+                  $bgFolder = Join-Path $backupFolder.FullName "variable-groups"
+                  # Get all variable groups
+                  $groups = ConvertFrom-Json "$(az pipelines variable-group list)"
+                  # echo $groups
+                  $groups | foreach {
+                    $groupName = $_.name
+
+                    # Prepend VariableGroups folder name
+                    $filePath = Join-Path $bgFolder "$groupName.json"
+
+                    # Save the variable group to a file
+                    ConvertTo-Json $_ | New-Item $filePath -Force
+                  }
+                displayName: 'Save variable groups'
+                workingDirectory: $(System.DefaultWorkingDirectory)
+                env:
+                  AZURE_DEVOPS_EXT_PAT: $(System.AccessToken)
+              - task: CmdLine@2
+                inputs:
+                  script: |
+                    az storage blob upload-batch -d ${{ parameters.backupContainerName }} --source "$(System.DefaultWorkingDirectory)/backup" --connection-string "${{ parameters.backupStorageAccountConectionString }}" --overwrite
+                  workingDirectory: '$(System.DefaultWorkingDirectory)'
+
+  - ${{ if eq(parameters.backupArtifacts, true) }}:
+    - deployment: backupArtifacts
+      displayName: Backup DevOps Artifacts
+      variables:
+        - name: backupDateTime
+          value: $[format('{0:yyyy}-{0:MM}-{0:dd}T{0:HH}-{0:mm}-{0:ss}', pipeline.startTime)]
+      environment: ${{ parameters.envName }}
+      strategy:
+        runOnce:
+          deploy:
+            steps:
+              #frontendbuild
+              - task: DownloadPackage@1
+                displayName: Download artifacts
+                inputs:
+                  packageType: 'upack'
+                  feed: ${{parameters.feedPath}} #'$(az._global.projectName)/$(az._global.artifacts.frontendbuild)@local' # stage=local/Release/Prerelease
+                  definition: ${{ parameters.packageName }}
+                  version: '*'
+                  downloadPath: '$(System.DefaultWorkingDirectory)/backup/$(backupDateTime)/Artifacts/${{ parameters.packageName }}/${{parameters.packageVersion}}'
+
+              - script: |
+                    az storage blob upload-batch -d ${{ parameters.backupContainerName }} --source "$(System.DefaultWorkingDirectory)/backup" --connection-string "${{ parameters.backupStorageAccountConectionString }}" --overwrite
+                workingDirectory: '$(System.DefaultWorkingDirectory)'
+                displayName: 'Publish to storage account'
+
+  - ${{ if eq(parameters.backupSourceCode, true) }}:
+    - deployment: backupSourceCode
+      displayName: Backup Source Code
+      variables:
+        - name: backupDateTime
+          value: $[format('{0:yyyy}-{0:MM}-{0:dd}T{0:HH}-{0:mm}-{0:ss}', pipeline.startTime)]
+      environment: ${{ parameters.envName }}
+      strategy:
+        runOnce:
+          deploy:
+            steps:
+            - ${{ each repoToBackup in parameters.repositories }}:
+              - checkout: ${{ repoToBackup }}
+                persistCredentials: true
+                clean: true
+                path: 
+            - script: |
+                  /bin/mkdir -p backup/$(backupDateTime)/SourceCode
+                  ls
+                  find . -maxdepth 1 ! \( -name backup -o -name '.' \) -exec cp -r {} backup/$(backupDateTime)/SourceCode/ \;
+              workingDirectory: '$(System.DefaultWorkingDirectory)'
+              displayName: Prepare backup folder
+            - ${{ if le(length(parameters.repositories), 1) }}:
+              - script: |
+                    zip -r -m "devOpsCodeBackup.zip" .
+                    ls -Al                   
+                workingDirectory: '$(System.DefaultWorkingDirectory)/backup/$(backupDateTime)/SourceCode'
+                displayName: Backup single repo
+            - ${{ if gt(length(parameters.repositories), 1) }}:
+              - script: |
+                    for i in */; do zip -r -m "${i%/}.zip" "$i"; done
+                    ls -Al                                      
+                workingDirectory: '$(System.DefaultWorkingDirectory)/backup/$(backupDateTime)/SourceCode'
+                displayName: Backup all repos
+            - task: AzureCLI@2
+              displayName: Azure Storage Blob Upload Batch
+              inputs:
+                scriptType: 'pscore'
+                scriptLocation: 'inlineScript'         
+                azureSubscription: ${{ parameters.serviceConnectionName }}              
+                inlineScript: | 
+                    az storage blob upload-batch -d ${{ parameters.backupContainerName }} --account-name ${{ parameters.storageAccountName }} --destination-path ${{ parameters.blobDirectoryName }} --source "$(System.DefaultWorkingDirectory)/backup" --overwrite

@@ -1,0 +1,36 @@
+# This is totally optional, you can remove all parameters and using hardcoded values in stages below
+# Parameters are useful if you are running this pipeline manually and you need sometimes to pick only required components
+parameters:
+  - name: backupSourceCode
+    displayName: 'Backup Azure DevOps Source Code'
+    type: boolean
+    default: true # Backup Azure DevOps Source Code (true/false)
+  - name: backupVariableGroups
+    displayName: 'Backup Azure DevOps Variable Groups'
+    type: boolean
+    default: false # Backup Azure DevOps Variable Groups (true/false)
+
+trigger:
+  none
+
+stages:
+  - stage: MAIN # CHANGE - the name of the stage, you can omit if you have only one stage and use jobs directly    
+    jobs:
+    - template: templates/multi-repo-backup-template.yml # CHANGE - the path and name of the backup template .yml file
+      parameters:        
+        backupSourceCode: ${{ parameters.backupSourceCode}} # can be changed to hardcoded value true or false
+        backupVariableGroups: ${{ parameters.backupVariableGroups}} # can be changed to hardcoded value true or false
+        repositories: # List of all repositories that you want to backup.
+          - self # Self means current repo where this file will be located. The current repo will be backed up by default.
+          - "git://SameProjectName/RepoName-1" # CHANGE - Please use syntax "git://ProjectName/RepoName" for all other repos. If Project name and/or Repo name contains spaces, then use it as it is without escaping.
+          - "git://SameProjectName/RepoName-2" # CHANGE
+          - "git://SameProjectName/RepoName-3" # CHANGE
+        serviceConnectionName: 'AzDevOps-Bkp-Svc' # CHANGE - name of the service connection in Azure DevOps for the Azure subscription
+        storageAccountName: 'devopsstorageaccount'  # CHANGE - name of the target Azure storage account. MUST EXISTS before execution!
+        backupContainerName: 'azure-devops-container' # CHANGE - name of the container in the storage account. MUST EXISTS before execution!
+        blobDirectoryName: 'az-devops-backup' # CHANGE - name of the blob directory where you wish to store the backup
+        # Other optional parameters:
+        #backupArtifacts: true/false - enable backup of artifact, default is false
+        #feedPath: path to artifact's feed
+        #packageName: package name
+        #packageVersion: pacakge version, usually from naming template
