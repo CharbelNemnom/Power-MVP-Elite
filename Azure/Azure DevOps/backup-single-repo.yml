@@ -18,23 +18,23 @@ variables:
 
 steps:
   - task: CmdLine@2
-  - bash: 'git clone --mirror https://${SYSTEM_ACCESSTOKEN}@dev.azure.com/{yourOrganizationName}/{yourProjectName}/_git/{yourRepoName}'      
+  - bash: 'git clone --bare https://${SYSTEM_ACCESSTOKEN}@dev.azure.com/{yourOrganizationName}/{yourProjectName}/_git/{yourRepoName}'      
     env:
       SYSTEM_ACCESSTOKEN: $(System.AccessToken)
 
   - task: ArchiveFiles@2
     displayName: 'Building archive file locally'
     inputs:
-      rootFolderOrFile: '$(System.DefaultWorkingDirectory)'
-      includeRootFolder: true
+      rootFolderOrFile: .
+      includeRootFolder: false
       archiveType: 'zip'
-      archiveFile: '$(Build.ArtifactStagingDirectory)/$(backup_date)_AzDevOpsBackup.zip'
+      archiveFile: '$(Build.ArtifactStagingDirectory)\$(backup_date)_AzDevOpsBackup.zip'
       replaceExistingArchive: true
 
   - task: AzureFileCopy@3
     displayName: 'Azure Blob File Copy'
     inputs:
-      SourcePath: '$(Build.ArtifactStagingDirectory)/$(backup_date)_AzDevOpsBackup.zip'
+      SourcePath: '$(Build.ArtifactStagingDirectory)\$(backup_date)_AzDevOpsBackup.zip'
       azureSubscription: 'AzDevOps-Bkp-Svc'
       Destination: 'AzureBlob'
       storage: 'storageaccountnamehere'

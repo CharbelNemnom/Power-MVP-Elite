@@ -22,9 +22,12 @@ stages:
         backupVariableGroups: ${{ parameters.backupVariableGroups}} # can be changed to hardcoded value true or false
         repositories: # List of all repositories that you want to backup.
           - self # Self means current repo where this file will be located. The current repo will be backed up by default.
-          - "git://SameProjectName/RepoName-1" # CHANGE - Please use syntax "git://ProjectName/RepoName" for all other repos. If Project name and/or Repo name contains spaces, then use it as it is without escaping.
-          - "git://SameProjectName/RepoName-2" # CHANGE
-          - "git://SameProjectName/RepoName-3" # CHANGE
+          - "git://ProjectName1/RepoName1" # CHANGE - Please use syntax "git://ProjectName/RepoName" for all other repos. If Project name and/or Repo name contains spaces, then use it as it is without escaping.
+          - "git://ProjectName1/RepoName2" # CHANGE
+          - "git://ProjectName2/RepoName1" # CHANGE
+          - "git://ProjectName2/RepoName2" # CHANGE
+          - "git://ProjectName3/RepoName1" # CHANGE
+          - "git://ProjectName3/RepoName2" # CHANGE
         serviceConnectionName: 'AzDevOps-Bkp-Svc' # CHANGE - name of the service connection in Azure DevOps for the Azure subscription
         storageAccountName: 'devopsstorageaccount'  # CHANGE - name of the target Azure storage account. MUST EXISTS before execution!
         backupContainerName: 'azure-devops-container' # CHANGE - name of the container in the storage account. MUST EXISTS before execution!
