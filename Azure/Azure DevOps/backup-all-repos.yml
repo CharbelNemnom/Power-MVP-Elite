@@ -22,7 +22,7 @@ stages:
         backupVariableGroups: ${{ parameters.backupVariableGroups}} # can be changed to hardcoded value true or false
         repositories: # List of all repositories that you want to backup.
           - self # Self means current repo where this file will be located. The current repo will be backed up by default.
-          - "git://ProjectName1/RepoName1" # CHANGE - Please use syntax "git://ProjectName/RepoName" for all other repos. If Project name and/or Repo name contains spaces, then use it as it is without escaping.
+          - "git://ProjectName1/RepoName1" # CHANGE - Please use syntax "git://ProjectName/RepoName" for all other projects/repos. If Project name and/or Repo name contains spaces, then use it as it is without escaping.
           - "git://ProjectName1/RepoName2" # CHANGE
           - "git://ProjectName2/RepoName1" # CHANGE
           - "git://ProjectName2/RepoName2" # CHANGE
