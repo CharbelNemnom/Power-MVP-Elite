@@ -15,7 +15,7 @@
         "description": "The gallery that the workbook will been shown under. Supported values include workbook, tsg, etc. Usually, this is 'workbook'"
       }
     },    
-    "logAnalyticsWorkspace": {
+    "logAnalyticsWorkspaceName": {
       "type": "string",
       "defaultValue": "",
       "metadata": {
@@ -38,7 +38,7 @@
     }
   },
   "variables": {
-    "workbookSourceId": "[resourceId(trim(parameters('logAnalyticsResourceGroup')), 'microsoft.operationalinsights/workspaces', trim(parameters('logAnalyticsWorkspace')))]"
+    "workbookSourceId": "[resourceId(trim(parameters('logAnalyticsResourceGroup')), 'microsoft.operationalinsights/workspaces', trim(parameters('logAnalyticsWorkspaceName')))]"
   },
   "resources": [
     {
