@@ -12,28 +12,28 @@
       "type": "string",
       "defaultValue": "sentinel",
       "metadata": {
-        "description": "The gallery that the workbook will been shown under. Supported values include workbook, tsg, etc. Usually, this is 'workbook'"
+        "description": "The gallery that the workbook will been shown under. Supported values include workbook, tsg, etc. Usually, this is 'sentinel'."
       }
     },    
     "logAnalyticsWorkspaceName": {
       "type": "string",
       "defaultValue": "",
       "metadata": {
-        "description": "The name of the Log Analytics workspace to which this workbook will be associated"
+        "description": "The name of the Log Analytics workspace to which this workbook will be associated."
       }
     },
     "logAnalyticsResourceGroup": {
       "type": "string",
       "defaultValue": "",
       "metadata": {
-        "description": "The Resource Group of the Log Analytics workspace to which this workbook will be associated"
+        "description": "The Resource Group of the Log Analytics workspace to which this workbook will be associated."
       }
     },    
     "workbookId": {
       "type": "string",
       "defaultValue": "[newGuid()]",
       "metadata": {
-        "description": "The unique guid for this workbook instance"
+        "description": "The unique guid for this workbook instance."
       }
     }
   },
