@@ -1,0 +1,314 @@
+{
+  "version": "Notebook/1.0",
+  "items": [
+    {
+      "type": 1,
+      "content": {
+        "json": "## Microsoft Sentinel Cost Optimization Dashboard\nThis dashboard helps identify and analyze data ingestion costs in Microsoft Sentinel."
+      },
+      "name": "text - header"
+    },
+    {
+      "type": 9,
+      "content": {
+        "version": "KqlParameterItem/1.0",
+        "parameters": [
+          {
+            "id": "85c7449b-dc5f-4bcd-a218-d676d2cd711f",
+            "version": "KqlParameterItem/1.0",
+            "name": "TimeRange",
+            "label": "Time Range",
+            "type": 4,
+            "isRequired": true,
+            "value": {
+              "durationMs": 2592000000
+            },
+            "typeSettings": {
+              "selectableValues": [
+                {
+                  "durationMs": 2592000000,
+                  "displayText": "Last 30 days"
+                },
+                {
+                  "durationMs": 5184000000,
+                  "displayText": "Last 60 days"
+                },
+                {
+                  "durationMs": 7776000000,
+                  "displayText": "Last 90 days"
+                }
+              ]
+            }
+          },
+          {
+            "id": "2eae1d77-4613-4509-8eb5-9524f8d1832d",
+            "version": "KqlParameterItem/1.0",
+            "name": "Tab",
+            "type": 10,
+            "isRequired": true,
+            "value": "DataSources",
+            "typeSettings": {
+              "additionalResourceOptions": [],
+              "showDefault": false
+            },
+            "jsonData": "[\r\n    { \"value\": \"Overview\", \"label\": \"Overview\"},\r\n    { \"value\": \"DataSources\", \"label\": \"Data Sources\"},\r\n    { \"value\": \"WindowsEvents\", \"label\": \"Windows Events\"},\r\n    { \"value\": \"Tables\", \"label\": \"Tables\"}\r\n]"
+          }
+        ],
+        "style": "pills",
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces"
+      },
+      "name": "parameters"
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "Usage                                                                               // <--Query the Usage table\n//| where TimeGenerated > ago(90d)                                                    // <--Query the last 90 days\n| where IsBillable == true                                                          // <--Only include 'billable' data\n| summarize TotalVolumeGB = sum(Quantity) / 1000 by bin(StartTime, 1d), Solution    // <--Chop it up into GB / Day\n| render columnchart                                                                // <--Graph the results",
+        "size": 1,
+        "title": "Billable Ingest Volume",
+        "timeContextFromParameter": "TimeRange",
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "visualization": "linechart"
+      },
+      "conditionalVisibility": {
+        "parameterName": "Tab",
+        "comparison": "isEqualTo",
+        "value": "Overview"
+      },
+      "name": "query - ingest volume"
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "Usage\n//| where TimeGenerated > ago(7d)\n| where IsBillable == true\n| summarize TotalGB = round(sum(Quantity) / 1024, 2)\n| extend ['Daily Average (GB)'] = round(TotalGB/7, 2)\n| extend ['Weekly Total (GB)'] = TotalGB\n| extend ['Estimated Monthly Cost ($)'] = round(TotalGB/7 * 30 * 2.0, 2)\n| project ['Daily Average (GB)'], ['Weekly Total (GB)'], ['Estimated Monthly Cost ($)']",
+        "size": 1,
+        "title": "Cost Summary",
+        "timeContextFromParameter": "TimeRange",
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "visualization": "table",
+        "gridSettings": {
+          "formatters": [
+            {
+              "columnMatch": "Daily Average (GB)",
+              "formatter": 4,
+              "formatOptions": {
+                "min": 0,
+                "palette": "blue"
+              }
+            },
+            {
+              "columnMatch": "Weekly Total (GB)",
+              "formatter": 4,
+              "formatOptions": {
+                "min": 0,
+                "palette": "blue"
+              }
+            },
+            {
+              "columnMatch": "Estimated Monthly Cost ($)",
+              "formatter": 4,
+              "formatOptions": {
+                "min": 0,
+                "palette": "greenRed"
+              }
+            }
+          ]
+        }
+      },
+      "conditionalVisibility": {
+        "parameterName": "Tab",
+        "comparison": "isEqualTo",
+        "value": "Overview"
+      },
+      "name": "query - cost summary"
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "// Find data sources with biggest changes in ingestion volume\nlet PriorPeriod = toscalar(\n    Usage\n    | where TimeGenerated > ago(60d) and TimeGenerated <= ago(30d)\n    | where IsBillable == true\n    | summarize min(TimeGenerated));\nlet CurrentPeriod = toscalar(\n    Usage\n    | where TimeGenerated > ago(30d)\n    | where IsBillable == true\n    | summarize max(TimeGenerated));\nlet PriorData = Usage\n    | where TimeGenerated between (PriorPeriod .. ago(30d))\n    | where IsBillable == true\n    | summarize PriorGB = round(todouble(sum(Quantity))/1024, 2) by DataType;\nlet CurrentData = Usage\n    | where TimeGenerated > ago(30d)\n    | where IsBillable == true\n    | summarize CurrentGB = round(todouble(sum(Quantity))/1024, 2) by DataType;\nPriorData\n| join kind=fullouter CurrentData on DataType\n| extend \n    DataType = coalesce(DataType, DataType1),\n    PriorGB = coalesce(PriorGB, 0.0),\n    CurrentGB = coalesce(CurrentGB, 0.0)\n| project \n    ['Data Source'] = DataType,\n    ['Previous 30 Days (GB)'] = PriorGB,\n    ['Current 30 Days (GB)'] = CurrentGB,\n    ['Change (GB)'] = round(CurrentGB - PriorGB, 2),\n    ['Change %'] = iif(PriorGB > 0, round(((CurrentGB - PriorGB) / PriorGB) * 100, 1), 100.0)\n| where ['Current 30 Days (GB)'] > 0 or ['Previous 30 Days (GB)'] > 0\n| top 5 by abs(['Change (GB)']) desc",
+        "size": 1,
+        "title": "Top 5 Data Sources by Volume Change",
+        "timeContextFromParameter": "TimeRange",
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "visualization": "table",
+        "gridSettings": {
+          "formatters": [
+            {
+              "columnMatch": "Previous 30 Days (GB)",
+              "formatter": 4,
+              "formatOptions": {
+                "min": 0,
+                "palette": "blue"
+              }
+            },
+            {
+              "columnMatch": "Current 30 Days (GB)",
+              "formatter": 4,
+              "formatOptions": {
+                "min": 0,
+                "palette": "blue"
+              }
+            },
+            {
+              "columnMatch": "Change (GB)",
+              "formatter": 4,
+              "formatOptions": {
+                "min": 0,
+                "palette": "redGreen"
+              }
+            },
+            {
+              "columnMatch": "Change %",
+              "formatter": 4,
+              "formatOptions": {
+                "min": 0,
+                "palette": "redGreen"
+              }
+            }
+          ]
+        }
+      },
+      "conditionalVisibility": {
+        "parameterName": "Tab",
+        "comparison": "isEqualTo",
+        "value": "DataSources"
+      },
+      "name": "query - volume changes"
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "Usage\n| where TimeGenerated > ago(30d)\n| where IsBillable == true\n| summarize TotalGB = round(sum(Quantity) / 1024, 2)\n    by DataType\n| top 10 by TotalGB desc\n| project ['Data Type'] = DataType, ['Total GB'] = TotalGB, ['Estimated Cost ($)'] = TotalGB * 2.0",
+        "size": 1,
+        "title": "Top 10 Billable Log Sources",
+        "timeContextFromParameter": "TimeRange",
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "visualization": "table",
+        "gridSettings": {
+          "formatters": [
+            {
+              "columnMatch": "Total GB",
+              "formatter": 4,
+              "formatOptions": {
+                "min": 0,
+                "palette": "blue"
+              }
+            },
+            {
+              "columnMatch": "Estimated Cost ($)",
+              "formatter": 4,
+              "formatOptions": {
+                "min": 0,
+                "palette": "greenRed"
+              }
+            }
+          ]
+        }
+      },
+      "conditionalVisibility": {
+        "parameterName": "Tab",
+        "comparison": "isEqualTo",
+        "value": "DataSources"
+      },
+      "name": "query - top sources"
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "SecurityEvent\n//| where TimeGenerated > ago(30d)\n| summarize Count = count(), SizeGB = round(sum(_BilledSize) / 1024/1024/1024, 2)\n    by EventID\n| top 10 by SizeGB desc\n| project ['Event ID'] = EventID, ['Event Count'] = Count, ['Size (GB)'] = SizeGB, ['Estimated Cost ($)'] = SizeGB * 2.0",
+        "size": 1,
+        "title": "Top 10 Windows EventIDs by Cost Impact",
+        "timeContextFromParameter": "TimeRange",
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "visualization": "table",
+        "gridSettings": {
+          "formatters": [
+            {
+              "columnMatch": "Event Count",
+              "formatter": 4,
+              "formatOptions": {
+                "min": 0,
+                "palette": "blue"
+              }
+            },
+            {
+              "columnMatch": "Size (GB)",
+              "formatter": 4,
+              "formatOptions": {
+                "min": 0,
+                "palette": "blue"
+              }
+            },
+            {
+              "columnMatch": "Estimated Cost ($)",
+              "formatter": 4,
+              "formatOptions": {
+                "min": 0,
+                "palette": "greenRed"
+              }
+            }
+          ]
+        }
+      },
+      "conditionalVisibility": {
+        "parameterName": "Tab",
+        "comparison": "isEqualTo",
+        "value": "WindowsEvents"
+      },
+      "name": "query - event costs"
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "Usage\n| where TimeGenerated > ago(90d)\n| where IsBillable == true\n| summarize TotalGB = round(sum(Quantity) / 1024, 2)\n    by DataType\n| order by TotalGB desc\n| project ['Table Name'] = DataType, ['Total GB'] = TotalGB, ['Daily Average GB'] = round(TotalGB/90, 2)",
+        "size": 1,
+        "title": "Data Volume by Table",
+        "timeContext": {
+          "durationMs": 7776000000
+        },
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "visualization": "table",
+        "gridSettings": {
+          "formatters": [
+            {
+              "columnMatch": "Total GB",
+              "formatter": 4,
+              "formatOptions": {
+                "min": 0,
+                "palette": "blue"
+              }
+            },
+            {
+              "columnMatch": "Daily Average GB",
+              "formatter": 4,
+              "formatOptions": {
+                "min": 0,
+                "palette": "blue"
+              }
+            }
+          ]
+        }
+      },
+      "conditionalVisibility": {
+        "parameterName": "Tab",
+        "comparison": "isEqualTo",
+        "value": "Tables"
+      },
+      "name": "query - table volumes"
+    }
+  ],  
+  "fromTemplateId": "sentinel-UserWorkbook",
+  "$schema": "https://github.com/Microsoft/Application-Insights-Workbooks/blob/master/schema/workbook.json"
+}
