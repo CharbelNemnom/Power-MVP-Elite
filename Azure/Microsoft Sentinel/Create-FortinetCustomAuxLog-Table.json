@@ -1,0 +1,235 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "workspaceName": {
+            "type": "String",
+            "metadata": {
+                "description": "Specify the name of the Log Analytics workspace to use"
+            }
+        },
+        "workspaceLocation": {
+            "defaultValue": "westeurope",
+            "type": "String",
+            "metadata": {
+                "description": "Specify the location of the Log Analytics workspace"
+            }
+        },
+        "tableName": {
+            "defaultValue": "FortinetCustomAuxLog_CL",
+            "type": "String",
+            "metadata": {
+                "description": "Specify the name of the new Table to be created."
+            }
+        },
+        "totalRetentionInDays": {
+            "defaultValue": 365,
+            "type": "int",
+            "minValue": 30,
+            "maxValue": 4383,
+            "metadata": {
+                "description": "Specify the total retention in days for the Auxiliary plan (30-4383 days)."
+            }
+        }
+    },
+    "variables": {
+        "workspaceId": "[resourceId('Microsoft.OperationalInsights/workspaces', parameters('workspaceName'))]"
+    },
+    "resources": [
+        {
+            "type": "Microsoft.OperationalInsights/workspaces/tables",
+            "apiVersion": "2023-01-01-preview",
+            "name": "[concat(parameters('workspaceName'), '/', parameters('tableName'))]",
+            "location": "[parameters('workspaceLocation')]",
+            "properties": {
+                "schema": {
+                    "name": "[parameters('tableName')]",
+                    "columns": [
+                        {
+                            "name": "TimeGenerated",
+                            "type": "datetime"
+                        },
+                        {
+                            "name": "RawData",
+                            "type": "string"
+                        },
+                        {
+                            "name": "DevName",
+                            "type": "string"
+                        },
+                        {
+                            "name": "DevID",
+                            "type": "string"
+                        },
+                        {
+                            "name": "LogID",
+                            "type": "string"
+                        },
+                        {
+                            "name": "EventType",
+                            "type": "string"
+                        },
+                        {
+                            "name": "SubType",
+                            "type": "string"
+                        },
+                        {
+                            "name": "Level",
+                            "type": "string"
+                        },
+                        {
+                            "name": "VirtualDomain",
+                            "type": "string"
+                        },
+                        {
+                            "name": "EventTime",
+                            "type": "datetime"
+                        },
+                        {
+                            "name": "DeviceTimeZone",
+                            "type": "string"
+                        },
+                        {
+                            "name": "SourceIP",
+                            "type": "string"
+                        },
+                        {
+                            "name": "SourcePort",
+                            "type": "int"
+                        },
+                        {
+                            "name": "DeviceInboundInterface",
+                            "type": "string"
+                        },
+                        {
+                            "name": "SourceInterfaceRole",
+                            "type": "string"
+                        },
+                        {
+                            "name": "DestinationIP",
+                            "type": "string"
+                        },
+                        {
+                            "name": "DestinationPort",
+                            "type": "int"
+                        },
+                        {
+                            "name": "DeviceOutboundInterface",
+                            "type": "string"
+                        },
+                        {
+                            "name": "DeviceOutboundInterfaceRole",
+                            "type": "string"
+                        },
+                        {
+                            "name": "ProtocolName",
+                            "type": "string"
+                        },
+                        {
+                            "name": "ProtocolID",
+                            "type": "int"
+                        },
+                        {
+                            "name": "Protocol",
+                            "type": "int"
+                        },
+                        {
+                            "name": "Service",
+                            "type": "string"
+                        },
+                        {
+                            "name": "Duration",
+                            "type": "int"
+                        },
+                        {
+                            "name": "SentBytes",
+                            "type": "int"
+                        },
+                        {
+                            "name": "ReceivedBytes",
+                            "type": "int"
+                        },
+                        {
+                            "name": "SentPackets",
+                            "type": "int"
+                        },
+                        {
+                            "name": "ReceivedPackets",
+                            "type": "int"
+                        },
+                        {
+                            "name": "Action",
+                            "type": "string"
+                        },
+                        {
+                            "name": "PolicyId",
+                            "type": "int"
+                        },
+                        {
+                            "name": "PolicyType",
+                            "type": "string"
+                        },
+                        {
+                            "name": "PolicyUUID",
+                            "type": "string"
+                        },
+                        {
+                            "name": "PolicyName",
+                            "type": "string"
+                        },
+                        {
+                            "name": "SessionID",
+                            "type": "long"
+                        },
+                        {
+                            "name": "SourceCountry",
+                            "type": "string"
+                        },
+                        {
+                            "name": "DestinationCountry",
+                            "type": "string"
+                        },
+                        {
+                            "name": "TranslationType",
+                            "type": "string"
+                        },
+                        {
+                            "name": "AppCat",
+                            "type": "string"
+                        },
+                        {
+                            "name": "VPNType",
+                            "type": "string"
+                        },
+                        {
+                            "name": "AppSubcat",
+                            "type": "string"
+                        },
+                        {
+                            "name": "AppName",
+                            "type": "string"
+                        },
+                        {
+                            "name": "CrScore",
+                            "type": "int"
+                        },
+                        {
+                            "name": "CrAction",
+                            "type": "string"
+                        },
+                        {
+                            "name": "SentDelta",
+                            "type": "int"
+                        },
+                        {
+                            "name": "ReceivedDelta",
+                            "type": "int"
+                        }
+                    ]
+                },
+                "totalRetentionInDays": "[parameters('totalRetentionInDays')]",
+                "plan": "Auxiliary"
+            }
+        }
+    ]
+}
