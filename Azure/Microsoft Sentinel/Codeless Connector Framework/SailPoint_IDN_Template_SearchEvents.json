@@ -101,6 +101,26 @@
                                         {
                                             "description": "Get Sample of SailPoint IdentityNow events",
                                             "query": "{{graphQueriesTableName}}\n | take 10"
+                                        },
+                                        {
+                                            "description": "Count events by type in the last 7 days",
+                                            "query": "{{graphQueriesTableName}}\n | where TimeGenerated > ago(7d)\n | summarize Count = count() by EventType\n | order by Count desc"
+                                        },
+                                        {
+                                            "description": "Recent identity events by actor",
+                                            "query": "{{graphQueriesTableName}}\n | where TimeGenerated > ago(24h)\n | extend ActorName = tostring(actor.name)\n | summarize EventCount = count() by ActorName, EventType\n | order by EventCount desc"
+                                        },
+                                        {
+                                            "description": "Failed or error operations in the last 24 hours",
+                                            "query": "{{graphQueriesTableName}}\n | where TimeGenerated > ago(24h)\n | where status =~ 'failed' or status =~ 'error'\n | extend ActorName = tostring(actor.name)\n | project TimeGenerated, EventType, action, ActorName, status\n | order by TimeGenerated desc"
+                                        },
+                                        {
+                                            "description": "Top 10 most active users by event count",
+                                            "query": "{{graphQueriesTableName}}\n | where TimeGenerated > ago(7d)\n | extend ActorName = tostring(actor.name)\n | where isnotempty(ActorName)\n | summarize EventCount = count() by ActorName\n | top 10 by EventCount"
+                                        },
+                                        {
+                                            "description": "Access requests and approvals timeline",
+                                            "query": "{{graphQueriesTableName}}\n | where TimeGenerated > ago(30d)\n | where EventType contains 'ACCESS' or action contains 'approve' or action contains 'request'\n | extend ActorName = tostring(actor.name), TargetName = tostring(target.name)\n | project TimeGenerated, EventType, action, ActorName, TargetName, status\n | order by TimeGenerated desc"
                                         }
                                     ],
                                     "dataTypes": [
@@ -428,6 +448,26 @@
                         {
                             "description": "Get Sample of SailPoint IdentityNow events",
                             "query": "{{graphQueriesTableName}}\n | take 10"
+                        },
+                        {
+                            "description": "Count events by type in the last 7 days",
+                            "query": "{{graphQueriesTableName}}\n | where TimeGenerated > ago(7d)\n | summarize Count = count() by EventType\n | order by Count desc"
+                        },
+                        {
+                            "description": "Recent identity events by actor",
+                            "query": "{{graphQueriesTableName}}\n | where TimeGenerated > ago(24h)\n | extend ActorName = tostring(actor.name)\n | summarize EventCount = count() by ActorName, EventType\n | order by EventCount desc"
+                        },
+                        {
+                            "description": "Failed or error operations in the last 24 hours",
+                            "query": "{{graphQueriesTableName}}\n | where TimeGenerated > ago(24h)\n | where status =~ 'failed' or status =~ 'error'\n | extend ActorName = tostring(actor.name)\n | project TimeGenerated, EventType, action, ActorName, status\n | order by TimeGenerated desc"
+                        },
+                        {
+                            "description": "Top 10 most active users by event count",
+                            "query": "{{graphQueriesTableName}}\n | where TimeGenerated > ago(7d)\n | extend ActorName = tostring(actor.name)\n | where isnotempty(ActorName)\n | summarize EventCount = count() by ActorName\n | top 10 by EventCount"
+                        },
+                        {
+                            "description": "Access requests and approvals timeline",
+                            "query": "{{graphQueriesTableName}}\n | where TimeGenerated > ago(30d)\n | where EventType contains 'ACCESS' or action contains 'approve' or action contains 'request'\n | extend ActorName = tostring(actor.name), TargetName = tostring(target.name)\n | project TimeGenerated, EventType, action, ActorName, TargetName, status\n | order by TimeGenerated desc"
                         }
                     ],
                     "dataTypes": [
