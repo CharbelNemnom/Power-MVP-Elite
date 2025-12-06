@@ -1,0 +1,500 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "subscriptionId": {
+            "type": "string",
+            "defaultValue": "[subscription().subscriptionId]",
+            "metadata": {
+                "description": "Azure Subscription ID"
+            }
+        },
+        "name": {
+            "type": "string",
+            "defaultValue": "func-log-export-prod-weu-001",
+            "metadata": {
+                "description": "Function App name"
+            }
+        },
+        "location": {
+            "type": "string",
+            "defaultValue": "westeurope",
+            "metadata": {
+                "description": "Azure region"
+            }
+        },
+        "storageAccountName": {
+            "type": "string",
+            "defaultValue": "stfunclogexportprdweu",
+            "metadata": {
+                "description": "Storage account for Function App deployment"
+            }
+        },
+        "sku": {
+            "type": "string",
+            "defaultValue": "FlexConsumption",
+            "metadata": {
+                "description": "Function App SKU tier"
+            }
+        },
+        "skuCode": {
+            "type": "string",
+            "defaultValue": "FC1",
+            "metadata": {
+                "description": "Function App SKU code - FC1 for Flex Consumption"
+            }
+        },
+        "hostingPlanName": {
+            "type": "string",
+            "defaultValue": "asp-log-export-prod-weu-001",
+            "metadata": {
+                "description": "App Service Plan name for the Flex Consumption plan (1:1 with Function App)."
+            }
+        },
+        "serverFarmResourceGroup": {
+            "type": "string",
+            "defaultValue": "[resourceGroup().name]",
+            "metadata": {
+                "description": "Resource group containing the App Service Plan"
+            }
+        },
+        "userAssignedIdentityName": {
+            "type": "string",
+            "defaultValue": "",
+            "metadata": {
+                "description": "User-assigned managed identity name. Leave empty to create a new one."
+            }
+        },
+        "vnetName": {
+            "type": "string",
+            "metadata": {
+                "description": "Virtual Network name for private connectivity"
+            }
+        },
+        "subnetNameFunctionApp": {
+            "type": "string",
+            "metadata": {
+                "description": "Subnet name for Function App VNet integration (must be delegated to Microsoft.App/environments)"
+            }
+        },
+        "subnetNamePrivateEndpoints": {
+            "type": "string",
+            "metadata": {
+                "description": "Subnet name for Private Endpoints (Storage Account and Function App) - must NOT be delegated"
+            }
+        },
+        "vnetResourceGroup": {
+            "type": "string",
+            "metadata": {
+                "description": "Resource group containing the VNet"
+            }
+        },
+        "prodWorkspaceId": {
+            "type": "string",
+            "metadata": {
+                "description": "Production Log Analytics Workspace ID"
+            }
+        },
+        "prodWorkspaceResourceGroup": {
+            "type": "string",
+            "metadata": {
+                "description": "Resource group containing the Production Log Analytics Workspace"
+            }
+        },
+        "prodWorkspaceName": {
+            "type": "string",
+            "metadata": {
+                "description": "Production Log Analytics Workspace name"
+            }
+        },
+        "dcrImmutableId": {
+            "type": "string",
+            "metadata": {
+                "description": "Data Collection Rule Immutable ID (NON-PROD)"
+            }
+        },
+        "dceEndpoint": {
+            "type": "string",
+            "metadata": {
+                "description": "Data Collection Endpoint URL"
+            }
+        },
+        "streamName": {
+            "type": "string",
+            "defaultValue": "Custom-FortinetCustomLog_CL",
+            "metadata": {
+                "description": "DCR stream name for ingestion"
+            }
+        },
+        "daysBack": {
+            "type": "int",
+            "defaultValue": 7,
+            "metadata": {
+                "description": "Number of days to query back in full sync mode"
+            }
+        },
+        "batchSize": {
+            "type": "int",
+            "defaultValue": 500,
+            "metadata": {
+                "description": "Batch size for data ingestion"
+            }
+        },
+        "useIncrementalSync": {
+            "type": "bool",
+            "defaultValue": true,
+            "metadata": {
+                "description": "Enable incremental sync to prevent duplicate data"
+            }
+        }
+    },
+    "variables": {
+        "deployNewIdentity": "[empty(parameters('userAssignedIdentityName'))]",
+        "identityName": "[if(variables('deployNewIdentity'), concat('uami-', parameters('name')), parameters('userAssignedIdentityName'))]",
+        "userAssignedIdentityResourceId": "[concat('/subscriptions/', parameters('subscriptionId'), '/resourcegroups/', parameters('serverFarmResourceGroup'), '/providers/Microsoft.ManagedIdentity/userAssignedIdentities/', variables('identityName'))]",
+        "subnetResourceId": "[concat('/subscriptions/', parameters('subscriptionId'), '/resourceGroups/', parameters('vnetResourceGroup'), '/providers/Microsoft.Network/virtualNetworks/', parameters('vnetName'), '/subnets/', parameters('subnetNameFunctionApp'))]",
+        "privateEndpointSubnetResourceId": "[concat('/subscriptions/', parameters('subscriptionId'), '/resourceGroups/', parameters('vnetResourceGroup'), '/providers/Microsoft.Network/virtualNetworks/', parameters('vnetName'), '/subnets/', parameters('subnetNamePrivateEndpoints'))]",
+        "appInsightsName": "[concat('appi-', parameters('name'))]"
+    },
+    "resources": [
+        {
+            "condition": "[variables('deployNewIdentity')]",
+            "type": "Microsoft.ManagedIdentity/userAssignedIdentities",
+            "apiVersion": "2023-01-31",
+            "name": "[variables('identityName')]",
+            "location": "[parameters('location')]",
+            "tags": {
+                "Purpose": "Log Export Function App",
+                "Environment": "Production"
+            }
+        },
+        {
+            "type": "Microsoft.Storage/storageAccounts",
+            "apiVersion": "2023-01-01",
+            "name": "[parameters('storageAccountName')]",
+            "location": "[parameters('location')]",
+            "tags": {
+                "Purpose": "Function App Deployment Storage",
+                "Environment": "Production"
+            },
+            "kind": "StorageV2",
+            "sku": {
+                "name": "Standard_LRS"
+            },
+            "properties": {
+                "supportsHttpsTrafficOnly": true,
+                "minimumTlsVersion": "TLS1_2",
+                "defaultToOAuthAuthentication": true,
+                "allowBlobPublicAccess": false,
+                "allowSharedKeyAccess": false,
+                "publicNetworkAccess": "Disabled",
+                "networkAcls": {
+                    "bypass": "AzureServices",
+                    "defaultAction": "Deny"
+                }
+            }
+        },
+        {
+            "type": "Microsoft.Storage/storageAccounts/blobServices",
+            "apiVersion": "2023-01-01",
+            "name": "[concat(parameters('storageAccountName'), '/default')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccountName'))]"
+            ]
+        },
+        {
+            "type": "Microsoft.Storage/storageAccounts/blobServices/containers",
+            "apiVersion": "2023-01-01",
+            "name": "[concat(parameters('storageAccountName'), '/default/function-deployments')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Storage/storageAccounts/blobServices', parameters('storageAccountName'), 'default')]",
+                "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccountName'))]"
+            ],
+            "properties": {
+                "publicAccess": "None"
+            }
+        },
+        {
+            "type": "Microsoft.Network/privateEndpoints",
+            "apiVersion": "2023-05-01",
+            "name": "[concat('pe-', parameters('storageAccountName'), '-blob')]",
+            "location": "[parameters('location')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccountName'))]"
+            ],
+            "properties": {
+                "subnet": {
+                    "id": "[variables('privateEndpointSubnetResourceId')]"
+                },
+                "customNetworkInterfaceName": "[concat('pe-', parameters('storageAccountName'), '-blob-nic')]",
+                "privateLinkServiceConnections": [
+                    {
+                        "name": "[concat('pe-', parameters('storageAccountName'), '-blob')]",
+                        "properties": {
+                            "privateLinkServiceId": "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccountName'))]",
+                            "groupIds": [
+                                "blob"
+                            ]
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "type": "Microsoft.Network/privateEndpoints/privateDnsZoneGroups",
+            "apiVersion": "2023-05-01",
+            "name": "[concat(concat('pe-', parameters('storageAccountName'), '-blob'), '/default')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/privateEndpoints', concat('pe-', parameters('storageAccountName'), '-blob'))]"
+            ],
+            "properties": {
+                "privateDnsZoneConfigs": [
+                    {
+                        "name": "privatelink-blob-core-windows-net",
+                        "properties": {
+                            "privateDnsZoneId": "[concat('/subscriptions/', parameters('subscriptionId'), '/resourceGroups/', parameters('vnetResourceGroup'), '/providers/Microsoft.Network/privateDnsZones/privatelink.blob.core.windows.net')]"
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "type": "Microsoft.Insights/components",
+            "apiVersion": "2020-02-02",
+            "name": "[variables('appInsightsName')]",
+            "location": "[parameters('location')]",
+            "kind": "web",
+            "tags": {
+                "Purpose": "Function App Monitoring",
+                "Environment": "Production"
+            },
+            "properties": {
+                "Application_Type": "web",
+                "RetentionInDays": 90,
+                "WorkspaceResourceId": "[concat('/subscriptions/', parameters('subscriptionId'), '/resourceGroups/', parameters('prodWorkspaceResourceGroup'), '/providers/Microsoft.OperationalInsights/workspaces/', parameters('prodWorkspaceName'))]",
+                "publicNetworkAccessForIngestion": "Enabled",
+                "publicNetworkAccessForQuery": "Enabled"
+            }
+        },
+        {
+            "apiVersion": "2024-11-01",
+            "name": "[parameters('hostingPlanName')]",
+            "type": "Microsoft.Web/serverfarms",
+            "location": "[parameters('location')]",
+            "kind": "linux",
+            "tags": {
+                "Purpose": "Log Export Function App Plan",
+                "Environment": "Production"
+            },
+            "properties": {
+                "name": "[parameters('hostingPlanName')]",
+                "reserved": true,
+                "zoneRedundant": false
+            },
+            "sku": {
+                "tier": "[parameters('sku')]",
+                "name": "[parameters('skuCode')]"
+            }
+        },
+        {
+            "apiVersion": "2023-12-01",
+            "name": "[parameters('name')]",
+            "type": "Microsoft.Web/sites",
+            "kind": "functionapp,linux",
+            "location": "[parameters('location')]",
+            "tags": {
+                "Purpose": "SIEM Log Export (PROD → NON-PROD)",
+                "Environment": "Production"
+            },
+            "identity": {
+                "type": "UserAssigned",
+                "userAssignedIdentities": {
+                    "[variables('userAssignedIdentityResourceId')]": {}
+                }
+            },
+            "dependsOn": [
+                "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccountName'))]",
+                "[resourceId('Microsoft.Insights/components', variables('appInsightsName'))]"
+            ],
+            "properties": {
+                "keyVaultReferenceIdentity": "[variables('userAssignedIdentityResourceId')]",
+                "name": "[parameters('name')]",
+                "siteConfig": {
+                    "appSettings": [
+                        {
+                            "name": "AzureWebJobsStorage__accountName",
+                            "value": "[parameters('storageAccountName')]"
+                        },
+                        {
+                            "name": "FUNCTIONS_EXTENSION_VERSION",
+                            "value": "~4"
+                        },
+                        {
+                            "name": "APPLICATIONINSIGHTS_CONNECTION_STRING",
+                            "value": "[reference(resourceId('Microsoft.Insights/components', variables('appInsightsName')), '2020-02-02').ConnectionString]"
+                        },
+                        {
+                            "name": "PROD_WORKSPACE_ID",
+                            "value": "[parameters('prodWorkspaceId')]"
+                        },
+                        {
+                            "name": "DCR_IMMUTABLE_ID",
+                            "value": "[parameters('dcrImmutableId')]"
+                        },
+                        {
+                            "name": "DCE_ENDPOINT",
+                            "value": "[parameters('dceEndpoint')]"
+                        },
+                        {
+                            "name": "STREAM_NAME",
+                            "value": "[parameters('streamName')]"
+                        },
+                        {
+                            "name": "DAYS_BACK",
+                            "value": "[string(parameters('daysBack'))]"
+                        },
+                        {
+                            "name": "BATCH_SIZE",
+                            "value": "[string(parameters('batchSize'))]"
+                        },
+                        {
+                            "name": "USE_INCREMENTAL_SYNC",
+                            "value": "[string(parameters('useIncrementalSync'))]"
+                        },
+                        {
+                            "name": "AZURE_CLIENT_ID",
+                            "value": "[reference(variables('userAssignedIdentityResourceId'), '2023-01-31').clientId]"
+                        }
+                    ],
+                    "cors": {
+                        "allowedOrigins": [
+                            "https://portal.azure.com"
+                        ]
+                    },
+                    "use32BitWorkerProcess": false
+                },
+                "clientAffinityEnabled": false,
+                "virtualNetworkSubnetId": "[variables('subnetResourceId')]",
+                "vnetRouteAllEnabled": true,
+                "siteScopedCertificatesEnabled": true,
+                "functionAppConfig": {
+                    "deployment": {
+                        "storage": {
+                            "type": "blobContainer",
+                            "value": "[concat('https://', parameters('storageAccountName'), '.blob.core.windows.net/function-deployments')]",
+                            "authentication": {
+                                "type": "UserAssignedIdentity",
+                                "userAssignedIdentityResourceId": "[variables('userAssignedIdentityResourceId')]"
+                            }
+                        }
+                    },
+                    "scaleAndConcurrency": {
+                        "maximumInstanceCount": 100,
+                        "instanceMemoryMB": 512
+                    },
+                    "runtime": {
+                        "name": "powershell",
+                        "version": "7.4"
+                    }
+                },
+                "publicNetworkAccess": "Disabled",
+                "httpsOnly": true,
+                "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', parameters('hostingPlanName'))]"
+            },
+            "resources": [
+                {
+                    "type": "Microsoft.Web/sites/basicPublishingCredentialsPolicies",
+                    "apiVersion": "2023-01-01",
+                    "name": "[concat(parameters('name'), '/scm')]",
+                    "properties": {
+                        "allow": false
+                    },
+                    "dependsOn": [
+                        "[resourceId('Microsoft.Web/sites', parameters('name'))]"
+                    ]
+                },
+                {
+                    "type": "Microsoft.Web/sites/basicPublishingCredentialsPolicies",
+                    "apiVersion": "2023-01-01",
+                    "name": "[concat(parameters('name'), '/ftp')]",
+                    "properties": {
+                        "allow": false
+                    },
+                    "dependsOn": [
+                        "[resourceId('Microsoft.Web/sites', parameters('name'))]"
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "Microsoft.Network/privateEndpoints",
+            "apiVersion": "2023-05-01",
+            "name": "[concat('pe-', parameters('name'), '-sites')]",
+            "location": "[parameters('location')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/sites', parameters('name'))]"
+            ],
+            "properties": {
+                "subnet": {
+                    "id": "[variables('privateEndpointSubnetResourceId')]"
+                },
+                "customNetworkInterfaceName": "[concat('pe-', parameters('name'), '-sites-nic')]",
+                "privateLinkServiceConnections": [
+                    {
+                        "name": "[concat('pe-', parameters('name'), '-sites')]",
+                        "properties": {
+                            "privateLinkServiceId": "[resourceId('Microsoft.Web/sites', parameters('name'))]",
+                            "groupIds": [
+                                "sites"
+                            ]
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "type": "Microsoft.Network/privateEndpoints/privateDnsZoneGroups",
+            "apiVersion": "2023-05-01",
+            "name": "[concat(concat('pe-', parameters('name'), '-sites'), '/default')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/privateEndpoints', concat('pe-', parameters('name'), '-sites'))]"
+            ],
+            "properties": {
+                "privateDnsZoneConfigs": [
+                    {
+                        "name": "privatelink-azurewebsites-net",
+                        "properties": {
+                            "privateDnsZoneId": "[concat('/subscriptions/', parameters('subscriptionId'), '/resourceGroups/', parameters('vnetResourceGroup'), '/providers/Microsoft.Network/privateDnsZones/privatelink.azurewebsites.net')]"
+                        }
+                    }
+                ]
+            }
+        }
+    ],
+    "outputs": {
+        "functionAppName": {
+            "type": "string",
+            "value": "[parameters('name')]"
+        },
+        "functionAppResourceId": {
+            "type": "string",
+            "value": "[resourceId('Microsoft.Web/sites', parameters('name'))]"
+        },
+        "userAssignedIdentityPrincipalId": {
+            "type": "string",
+            "value": "[reference(variables('userAssignedIdentityResourceId'), '2023-01-31').principalId]"
+        },
+        "userAssignedIdentityClientId": {
+            "type": "string",
+            "value": "[reference(variables('userAssignedIdentityResourceId'), '2023-01-31').clientId]"
+        },
+        "userAssignedIdentityResourceId": {
+            "type": "string",
+            "value": "[variables('userAssignedIdentityResourceId')]"
+        },
+        "storageAccountName": {
+            "type": "string",
+            "value": "[parameters('storageAccountName')]"
+        }
+    }
+}
