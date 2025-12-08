@@ -1,0 +1,244 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "dcrName": {
+      "type": "string",
+      "defaultValue": "dcr-custom-fortinet-logs",
+      "metadata": {
+        "description": "Name of the Data Collection Rule"
+      }
+    },
+    "location": {
+      "type": "string",
+      "defaultValue": "westeurope"
+    },
+    "dceResourceId": {
+      "type": "string",
+      "metadata": {
+        "description": "Resource ID of the Data Collection Endpoint"
+      }
+    },
+    "workspaceResourceId": {
+      "type": "string",
+      "metadata": {
+        "description": "Resource ID of the destination Log Analytics workspace"
+      }
+    }
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Insights/dataCollectionRules",
+      "apiVersion": "2022-06-01",
+      "name": "[parameters('dcrName')]",
+      "location": "[parameters('location')]",
+      "properties": {
+        "dataCollectionEndpointId": "[parameters('dceResourceId')]",
+        "streamDeclarations": {
+          "Custom-FortinetCustomLog_CL": {
+            "columns": [
+                {
+                    "name": "TimeGenerated",
+                    "type": "datetime"
+                },
+                {
+                    "name": "EventTime",
+                    "type": "datetime"
+                },
+                {
+                    "name": "DevName",
+                    "type": "string"
+                },
+                {
+                    "name": "DevID",
+                    "type": "string"
+                },
+                {
+                    "name": "DeviceTimeZone",
+                    "type": "string"
+                },
+                {
+                    "name": "LogID",
+                    "type": "string"
+                },
+                {
+                    "name": "EventType",
+                    "type": "string"
+                },
+                {
+                    "name": "SubType",
+                    "type": "string"
+                },
+                {
+                    "name": "Level",
+                    "type": "string"
+                },
+                {
+                    "name": "VirtualDomain",
+                    "type": "string"
+                },
+                {
+                    "name": "SourceIP",
+                    "type": "string"
+                },
+                {
+                    "name": "SourcePort",
+                    "type": "int"
+                },
+                {
+                    "name": "DeviceInboundInterface",
+                    "type": "string"
+                },
+                {
+                    "name": "SourceInterfaceRole",
+                    "type": "string"
+                },
+                {
+                    "name": "DestinationIP",
+                    "type": "string"
+                },
+                {
+                    "name": "DestinationPort",
+                    "type": "int"
+                },
+                {
+                    "name": "DeviceOutboundInterface",
+                    "type": "string"
+                },
+                {
+                    "name": "DeviceOutboundInterfaceRole",
+                    "type": "string"
+                },
+                {
+                    "name": "SourceCountry",
+                    "type": "string"
+                },
+                {
+                    "name": "DestinationCountry",
+                    "type": "string"
+                },
+                {
+                    "name": "SessionID",
+                    "type": "long"
+                },
+                {
+                    "name": "Protocol",
+                    "type": "int"
+                },
+                {
+                    "name": "Action",
+                    "type": "string"
+                },
+                {
+                    "name": "PolicyId",
+                    "type": "int"
+                },
+                {
+                    "name": "PolicyType",
+                    "type": "string"
+                },
+                {
+                    "name": "PolicyUUID",
+                    "type": "string"
+                },
+                {
+                    "name": "PolicyName",
+                    "type": "string"
+                },
+                {
+                    "name": "Service",
+                    "type": "string"
+                },
+                {
+                    "name": "TranslationType",
+                    "type": "string"
+                },
+                {
+                    "name": "Duration",
+                    "type": "int"
+                },
+                {
+                    "name": "SentBytes",
+                    "type": "int"
+                },
+                {
+                    "name": "ReceivedBytes",
+                    "type": "int"
+                },
+                {
+                    "name": "SentPackets",
+                    "type": "int"
+                },
+                {
+                    "name": "ReceivedPackets",
+                    "type": "int"
+                },
+                {
+                    "name": "VPNType",
+                    "type": "string"
+                },
+                {
+                    "name": "AppCat",
+                    "type": "string"
+                },
+                {
+                    "name": "AppSubcat",
+                    "type": "string"
+                },
+                {
+                    "name": "AppName",
+                    "type": "string"
+                },
+                {
+                    "name": "SentDelta",
+                    "type": "int"
+                },
+                {
+                    "name": "ReceivedDelta",
+                    "type": "int"
+                },
+                {
+                    "name": "CrScore",
+                    "type": "int"
+                },
+                {
+                    "name": "CrAction",
+                    "type": "string"
+                },
+                {
+                    "name": "ProtocolName",
+                    "type": "string"
+                },
+                {
+                    "name": "ProtocolID",
+                    "type": "int"
+                }
+            ]
+          }
+        },
+        "destinations": {
+          "logAnalytics": [
+            {
+              "workspaceResourceId": "[parameters('workspaceResourceId')]",
+              "name": "workspace-nonprod"
+            }
+          ]
+        },
+        "dataFlows": [
+          {
+            "streams": [ "Custom-FortinetCustomLog_CL" ],
+            "destinations": [ "workspace-nonprod" ],
+            "transformKql": "source",
+            "outputStream": "Custom-FortinetCustomLog_CL"
+          }
+        ]
+      }
+    }
+  ],
+  "outputs": {
+    "dcrImmutableId": {
+      "type": "string",
+      "value": "[reference(resourceId('Microsoft.Insights/dataCollectionRules', parameters('dcrName')), '2022-06-01').immutableId]"
+    }
+  }
+}

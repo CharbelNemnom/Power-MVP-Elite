@@ -1,0 +1,185 @@
+{
+    "properties": {
+        "schema": {
+            "name": "FortinetCustomLog_CL",
+            "columns": [
+                {
+                    "name": "TimeGenerated",
+                    "type": "datetime"
+                },
+                {
+                    "name": "EventTime",
+                    "type": "datetime"
+                },
+                {
+                    "name": "DevName",
+                    "type": "string"
+                },
+                {
+                    "name": "DevID",
+                    "type": "string"
+                },
+                {
+                    "name": "DeviceTimeZone",
+                    "type": "string"
+                },
+                {
+                    "name": "LogID",
+                    "type": "string"
+                },
+                {
+                    "name": "EventType",
+                    "type": "string"
+                },
+                {
+                    "name": "SubType",
+                    "type": "string"
+                },
+                {
+                    "name": "Level",
+                    "type": "string"
+                },
+                {
+                    "name": "VirtualDomain",
+                    "type": "string"
+                },
+                {
+                    "name": "SourceIP",
+                    "type": "string"
+                },
+                {
+                    "name": "SourcePort",
+                    "type": "int"
+                },
+                {
+                    "name": "DeviceInboundInterface",
+                    "type": "string"
+                },
+                {
+                    "name": "SourceInterfaceRole",
+                    "type": "string"
+                },
+                {
+                    "name": "DestinationIP",
+                    "type": "string"
+                },
+                {
+                    "name": "DestinationPort",
+                    "type": "int"
+                },
+                {
+                    "name": "DeviceOutboundInterface",
+                    "type": "string"
+                },
+                {
+                    "name": "DeviceOutboundInterfaceRole",
+                    "type": "string"
+                },
+                {
+                    "name": "SourceCountry",
+                    "type": "string"
+                },
+                {
+                    "name": "DestinationCountry",
+                    "type": "string"
+                },
+                {
+                    "name": "SessionID",
+                    "type": "long"
+                },
+                {
+                    "name": "Protocol",
+                    "type": "int"
+                },
+                {
+                    "name": "Action",
+                    "type": "string"
+                },
+                {
+                    "name": "PolicyId",
+                    "type": "int"
+                },
+                {
+                    "name": "PolicyType",
+                    "type": "string"
+                },
+                {
+                    "name": "PolicyUUID",
+                    "type": "string"
+                },
+                {
+                    "name": "PolicyName",
+                    "type": "string"
+                },
+                {
+                    "name": "Service",
+                    "type": "string"
+                },
+                {
+                    "name": "TranslationType",
+                    "type": "string"
+                },
+                {
+                    "name": "Duration",
+                    "type": "int"
+                },
+                {
+                    "name": "SentBytes",
+                    "type": "int"
+                },
+                {
+                    "name": "ReceivedBytes",
+                    "type": "int"
+                },
+                {
+                    "name": "SentPackets",
+                    "type": "int"
+                },
+                {
+                    "name": "ReceivedPackets",
+                    "type": "int"
+                },
+                {
+                    "name": "VPNType",
+                    "type": "string"
+                },
+                {
+                    "name": "AppCat",
+                    "type": "string"
+                },
+                {
+                    "name": "AppSubcat",
+                    "type": "string"
+                },
+                {
+                    "name": "AppName",
+                    "type": "string"
+                },
+                {
+                    "name": "SentDelta",
+                    "type": "int"
+                },
+                {
+                    "name": "ReceivedDelta",
+                    "type": "int"
+                },
+                {
+                    "name": "CrScore",
+                    "type": "int"
+                },
+                {
+                    "name": "CrAction",
+                    "type": "string"
+                },
+                {
+                    "name": "ProtocolName",
+                    "type": "string"
+                },
+                {
+                    "name": "ProtocolID",
+                    "type": "int"
+                }
+            ]
+        }
+    }
+}
