@@ -176,22 +176,15 @@ try {
     
     # TESTING: Using FortinetCustomLog_CL table to verify end-to-end functionality
     # This will send to Custom-FortinetCustomLog_CL stream
+    # Customize and tweak the KQL $query variable’s content to change what data is exported
     $query = @"
 FortinetCustomLog_CL
 | where TimeGenerated >= datetime($startDate) and TimeGenerated < datetime($endDate)
-| take 10
+| where Action == "accept"
 "@
     
     Write-Host "Executing query:" -ForegroundColor Gray
-    Write-Host $query -ForegroundColor DarkGray
-    
-    # PRODUCTION QUERY (commented out for testing):
-    # $query = @"
-# ZscalerWebCustomLog_CL
-# | where TimeGenerated between (datetime($startDate) .. datetime($endDate))
-# | where isnotempty(ThreatName) and ThreatName <> "None"
-# | where Action == "Allowed" and not(Host endswith "qq.com")
-# "@
+    Write-Host $query -ForegroundColor DarkGray    
     
     $queryUri = "https://api.loganalytics.azure.com/v1/workspaces/$prodWorkspaceId/query"
     $queryHeaders = @{
