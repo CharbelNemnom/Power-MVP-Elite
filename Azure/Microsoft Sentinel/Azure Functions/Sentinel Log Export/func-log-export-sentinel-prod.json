@@ -346,6 +346,10 @@
                             "value": "[parameters('dceEndpoint')]"
                         },
                         {
+                            "name": "STATE_STORAGE_CONTAINER",
+                            "value": "function-deployments"
+                        },
+                        {
                             "name": "STREAM_NAME",
                             "value": "[parameters('streamName')]"
                         },
