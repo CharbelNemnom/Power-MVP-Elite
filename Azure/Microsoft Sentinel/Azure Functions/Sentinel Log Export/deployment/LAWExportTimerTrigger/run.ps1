@@ -46,26 +46,25 @@ if ([string]::IsNullOrEmpty($dcrImmutableId) -or [string]::IsNullOrEmpty($dceEnd
 # Date range configuration (optional, defaults to 7 days)
 $daysBack = if ($env:DAYS_BACK) { [int]$env:DAYS_BACK } else { 7 }
 
+# State storage configuration (blob-backed for Flex Consumption; falls back to local file on dedicated plans)
+# Keep it simple: use the built-in AzureWebJobsStorage connection and account name, with optional container/blob overrides.
+$stateStorageAccount          = $env:AzureWebJobsStorage__accountName
+$stateStorageContainer        = if ($env:STATE_STORAGE_CONTAINER) { $env:STATE_STORAGE_CONTAINER } else { 'function-deployments' }
+$stateStorageBlobName         = if ($env:STATE_STORAGE_BLOB_NAME) { $env:STATE_STORAGE_BLOB_NAME } else { 'lastrun_timestamp.txt' }
+$stateStorageConnectionString = $env:AzureWebJobsStorage  # available by default in Function Apps
+
 # Check if we have a last run timestamp stored
+# NOTE: Local file works on Dedicated/Premium plans; Flex Consumption has an ephemeral, read-only filesystem.
 $lastRunTimestampFile = "$env:HOME\lastrun_timestamp.txt"
-$useIncrementalSync = $env:USE_INCREMENTAL_SYNC -eq "true"
+$incrementalEnv = if ($env:USE_INCREMENTAL_SYNC) { $env:USE_INCREMENTAL_SYNC.Trim().ToLowerInvariant() } else { "" }
+$useIncrementalSync = ($incrementalEnv -eq "true" -or $incrementalEnv -eq "1")
+$useBlobState = $useIncrementalSync -and (
+    (-not [string]::IsNullOrEmpty($stateStorageAccount)) -or
+    (-not [string]::IsNullOrEmpty($stateStorageConnectionString))
+)
 
-if ($useIncrementalSync -and (Test-Path $lastRunTimestampFile)) {
-    $lastRunTime = Get-Content $lastRunTimestampFile -Raw
-    $startDate = $lastRunTime.Trim()
-    Write-Host "Using incremental sync from last run: $startDate" -ForegroundColor Yellow
-} else {
-    $startDate = (Get-Date).AddDays(-$daysBack).ToString("yyyy-MM-ddTHH:mm:ss")
-    Write-Host "Using full sync for last $daysBack days" -ForegroundColor Yellow
-}
-
-$endDate = (Get-Date).ToString("yyyy-MM-ddTHH:mm:ss")  # Current time
-
-# Log the query date range for visibility
-Write-Host "`nQuery Date Range:" -ForegroundColor Cyan
-Write-Host "  Start: $startDate" -ForegroundColor White
-Write-Host "  End:   $endDate" -ForegroundColor White
-Write-Host "  Mode:  $(if ($useIncrementalSync) { 'Incremental Sync' } else { 'Full Sync' })" -ForegroundColor $(if ($useIncrementalSync) { 'Green' } else { 'Yellow' })
+$startDate = $null  # will be set below; defaults to full sync if no state found
+$isIncrementalMode = $false
 
 # Batch size configuration (optional, defaults to 500)
 $batchSize = if ($env:BATCH_SIZE) { [int]$env:BATCH_SIZE } else { 500 }
@@ -78,6 +77,8 @@ Write-Host "  DCE_ENDPOINT: $dceEndpoint" -ForegroundColor Gray
 Write-Host "  STREAM_NAME: $streamName" -ForegroundColor Gray
 Write-Host "  DAYS_BACK: $daysBack" -ForegroundColor Gray
 Write-Host "  BATCH_SIZE: $batchSize" -ForegroundColor Gray
+Write-Host "  USE_INCREMENTAL_SYNC (raw): $env:USE_INCREMENTAL_SYNC  effective=$useIncrementalSync" -ForegroundColor Gray
+Write-Host "  STATE_STORAGE: account=$stateStorageAccount container=$stateStorageContainer blob=$stateStorageBlobName connString=$([string]::IsNullOrEmpty($stateStorageConnectionString) -eq $false)" -ForegroundColor Gray
 
 # ============================================================================
 # Function: Get-ManagedIdentityToken
@@ -156,6 +157,118 @@ function Send-AzMonitorIngestionData {
     }
 }
 
+# =================================================================================
+# Functions: State management in Blob Storage using Managed Identity (no Az module)
+# =================================================================================
+function Get-StorageBearerToken {
+    return Get-ManagedIdentityToken -ResourceUrl "https://storage.azure.com"
+}
+
+function Invoke-StorageRequest {
+    param (
+        [Parameter(Mandatory = $true)] [string]$Method,
+        [Parameter(Mandatory = $true)] [string]$Uri,
+        [Parameter()] [string]$Body,
+        [Parameter()] [hashtable]$ExtraHeaders
+    )
+    $headers = @{
+        "Authorization" = "Bearer $(Get-StorageBearerToken)"
+        "x-ms-version"  = "2020-10-02"
+        "x-ms-date"     = (Get-Date).ToUniversalTime().ToString("R")
+    }
+    if ($Body) { $headers["Content-Type"] = "text/plain" }
+    if ($ExtraHeaders) { $ExtraHeaders.GetEnumerator() | ForEach-Object { $headers[$_.Key] = $_.Value } }
+    return Invoke-RestMethod -Method $Method -Uri $Uri -Headers $headers -Body $Body -ErrorAction Stop
+}
+
+function Ensure-ContainerExists {
+    param (
+        [Parameter(Mandatory = $true)] [string]$AccountName,
+        [Parameter(Mandatory = $true)] [string]$ContainerName
+    )
+    $uri = "https://$AccountName.blob.core.windows.net/$ContainerName`?restype=container"
+    try {
+        Invoke-StorageRequest -Method Put -Uri $uri | Out-Null
+    }
+    catch {
+        if ($_.Exception.Response.StatusCode.value__ -ne 409) {
+            throw
+        }
+    }
+}
+
+function Get-LastRunFromBlobRest {
+    param (
+        [Parameter(Mandatory = $true)] [string]$AccountName,
+        [Parameter(Mandatory = $true)] [string]$ContainerName,
+        [Parameter(Mandatory = $true)] [string]$BlobName
+    )
+    $uri = "https://$AccountName.blob.core.windows.net/$ContainerName/$BlobName"
+    try {
+        return Invoke-StorageRequest -Method Get -Uri $uri
+    }
+    catch {
+        if ($_.Exception.Response.StatusCode.value__ -eq 404) {
+            return $null
+        }
+        throw
+    }
+}
+
+function Set-LastRunInBlobRest {
+    param (
+        [Parameter(Mandatory = $true)] [string]$AccountName,
+        [Parameter(Mandatory = $true)] [string]$ContainerName,
+        [Parameter(Mandatory = $true)] [string]$BlobName,
+        [Parameter(Mandatory = $true)] [string]$Timestamp
+    )
+    Ensure-ContainerExists -AccountName $AccountName -ContainerName $ContainerName
+    $uri = "https://$AccountName.blob.core.windows.net/$ContainerName/$BlobName"
+    Invoke-StorageRequest -Method Put -Uri $uri -Body $Timestamp -ExtraHeaders @{ "x-ms-blob-type" = "BlockBlob" } | Out-Null
+}
+
+# ============================================================================
+# Resolve sync window (prefers blob state, then local file, else full window)
+# ============================================================================
+if ($useIncrementalSync -and $useBlobState) {
+    try {
+        $lastRunFromBlob = Get-LastRunFromBlobRest -AccountName $stateStorageAccount -ContainerName $stateStorageContainer -BlobName $stateStorageBlobName
+        if ($lastRunFromBlob) {
+            $startDate = $lastRunFromBlob.Trim()
+            $isIncrementalMode = $true
+            Write-Host "Using incremental sync from blob marker: $startDate" -ForegroundColor Yellow
+        }
+        else {
+            Write-Host "No blob marker found; falling back to default window." -ForegroundColor Yellow
+        }
+    }
+    catch {
+        Write-Warning "Failed to read blob state: $_"
+    }
+}
+
+# Local fallback disabled when blob state is available; retained for dedicated/local scenarios.
+if (-not $startDate -and $useIncrementalSync -and (-not $useBlobState) -and (Test-Path $lastRunTimestampFile)) {
+    $lastRunTime = Get-Content $lastRunTimestampFile -Raw
+    $startDate = $lastRunTime.Trim()
+    $isIncrementalMode = $true
+    Write-Host "Using incremental sync from local file: $startDate" -ForegroundColor Yellow
+}
+
+if (-not $startDate) {
+    $startDate = (Get-Date).AddDays(-$daysBack).ToString("yyyy-MM-ddTHH:mm:ss")
+    Write-Host "Using full sync for last $daysBack days" -ForegroundColor Yellow
+}
+
+$endDate = (Get-Date).ToString("yyyy-MM-ddTHH:mm:ss")  # Current time
+
+# Log the query date range for visibility
+$modeLabel = if ($isIncrementalMode) { 'Incremental Sync' } else { 'Full Sync' }
+Write-Host "`nQuery Date Range:" -ForegroundColor Cyan
+Write-Host "  Start: $startDate" -ForegroundColor White
+Write-Host "  End:   $endDate" -ForegroundColor White
+Write-Host "  Mode:  $modeLabel" -ForegroundColor $(if ($isIncrementalMode) { 'Green' } else { 'Yellow' })
+
 # ============================================================================
 # MAIN EXECUTION
 # ============================================================================
@@ -210,8 +323,18 @@ FortinetCustomLog_CL
             
             # Still save timestamp even when no data (to advance the sync window)
             if ($useIncrementalSync) {
-                $endDate | Out-File -FilePath $lastRunTimestampFile -NoNewline -Force
-                Write-Host "✓ Updated sync marker for next run" -ForegroundColor Green
+                try {
+                    if ($useBlobState) {
+                        Set-LastRunInBlobRest -AccountName $stateStorageAccount -ContainerName $stateStorageContainer -BlobName $stateStorageBlobName -Timestamp $endDate
+                    }
+                    else {
+                        $endDate | Out-File -FilePath $lastRunTimestampFile -NoNewline -Force
+                    }
+                    Write-Host "✓ Updated sync marker for next run" -ForegroundColor Green
+                }
+                catch {
+                    Write-Warning "Failed to persist sync marker: $_"
+                }
             }
             exit
         }
@@ -270,16 +393,26 @@ FortinetCustomLog_CL
     
     # Summary
     Write-Host "`n=== Ingestion Summary ===" -ForegroundColor Cyan
-    Write-Host "Sync Window: $startDate → $endDate" -ForegroundColor Gray
+    Write-Host "Sync Window: $startDate -> $endDate" -ForegroundColor Gray
     Write-Host "Total records: $($data.Count)" -ForegroundColor White
     Write-Host "Successfully sent: $successCount" -ForegroundColor Green
     Write-Host "Failed: $failureCount" -ForegroundColor $(if ($failureCount -gt 0) { "Red" } else { "Green" })
     
     # Save timestamp for next run (only if all batches succeeded)
     if ($failureCount -eq 0 -and $useIncrementalSync) {
-        $endDate | Out-File -FilePath $lastRunTimestampFile -NoNewline -Force
-        Write-Host "✓ Sync marker advanced to: $endDate" -ForegroundColor Green
-        Write-Host "ℹ Next run will query from this timestamp forward" -ForegroundColor Cyan
+        try {
+            if ($useBlobState) {
+                Set-LastRunInBlobRest -AccountName $stateStorageAccount -ContainerName $stateStorageContainer -BlobName $stateStorageBlobName -Timestamp $endDate
+            }
+            else {
+                $endDate | Out-File -FilePath $lastRunTimestampFile -NoNewline -Force
+            }
+            Write-Host "✓ Sync marker advanced to: $endDate" -ForegroundColor Green
+            Write-Host "ℹ Next run will query from this timestamp forward" -ForegroundColor Cyan
+        }
+        catch {
+            Write-Warning "Failed to persist sync marker: $_"
+        }
     }
     
     Write-Host "End Time: $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')" -ForegroundColor Cyan
